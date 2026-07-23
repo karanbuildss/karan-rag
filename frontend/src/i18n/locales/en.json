@@ -1,0 +1,240 @@
+{
+  "common": {
+    "loading": "Loading Budget Darpan…",
+    "loadingVisualization": "Loading visualization…"
+  },
+  "brand": {
+    "name": "Budget Darpan",
+    "tagline": "Public money, made visible",
+    "homeLabel": "Budget Darpan home"
+  },
+  "navigation": {
+    "label": "Primary navigation",
+    "moneyTrail": "Money trail",
+    "documents": "Source library",
+    "principles": "Our standard",
+    "status": "Build status"
+  },
+  "hero": {
+    "eyebrow": "Evidence-led civic transparency",
+    "title": "See where public money goes—and the evidence behind it.",
+    "description": "Explore local budgets, follow projects from allocation to payment, and ask clear questions in English, Nepali, or Romanized Nepali.",
+    "primaryAction": "Follow the money trail",
+    "secondaryAction": "See our evidence standard",
+    "safety": "Budget Darpan does not accuse. It identifies patterns and evidence that may require further review."
+  },
+  "visual": {
+    "label": "Illustration of the Budget Darpan evidence trail",
+    "eyebrow": "One connected record",
+    "title": "From promise to public evidence",
+    "demoLabel": "Real evidence path",
+    "steps": {
+      "allocation": {
+        "title": "Budget allocation",
+        "description": "Exact amounts come from structured, traceable records."
+      },
+      "project": {
+        "title": "Project and contract",
+        "description": "Available procurement records stay connected; missing records remain visible as evidence gaps."
+      },
+      "payment": {
+        "title": "Payment and progress",
+        "description": "Reported spending is shown separately from unknown data."
+      },
+      "evidence": {
+        "title": "Documents and citizen evidence",
+        "description": "Every narrative claim can lead back to its source."
+      }
+    }
+  },
+  "journey": {
+    "eyebrow": "The public money trail",
+    "title": "A single story instead of disconnected spreadsheets.",
+    "description": "Budget Darpan connects allocations, projects, procurement, payments, official progress, documents, and verified citizen feedback so a citizen can understand the full context without becoming a financial analyst."
+  },
+  "principles": {
+    "eyebrow": "Trust is a product feature",
+    "title": "Built for questions that deserve careful answers.",
+    "items": {
+      "numbers": {
+        "title": "Numbers from the database",
+        "description": "Financial totals use relational records and decimal arithmetic. The AI never invents or calculates official values."
+      },
+      "citations": {
+        "title": "Claims linked to sources",
+        "description": "Document answers preserve title, page, section, fiscal year, municipality, and source link whenever available."
+      },
+      "anomalies": {
+        "title": "Patterns, not accusations",
+        "description": "Every indicator explains the rule, threshold, data used, possible explanations, and recommended next step."
+      }
+    }
+  },
+  "status": {
+    "eyebrow": "Phase 0 · Foundation",
+    "title": "Frontend and API connection",
+    "connecting": "Checking local API…",
+    "connected": "Local API connected",
+    "offline": "API unavailable · browsing fallback remains"
+  },
+  "project": {
+    "loading": "Loading the project money trail…",
+    "errorEyebrow": "Connection issue",
+    "errorTitle": "The project record could not be loaded.",
+    "errorDescription": "Start the local API and try again. Public browsing remains available when optional AI services are offline.",
+    "retry": "Try again",
+    "back": "Back to overview",
+    "syntheticDemo": "Synthetic demo data",
+    "classification": {
+      "official": "Official record",
+      "reconstructed": "Reconstructed from official sources",
+      "curatedDemo": "Curated demonstration data",
+      "syntheticDemo": "Synthetic demo data",
+      "unknown": "Data classification unavailable"
+    },
+    "ward": "Ward {{number}}",
+    "officialProgress": "Officially reported progress",
+    "progressLabel": "Officially reported progress: {{progress}} percent",
+    "fiscalYear": "Fiscal year",
+    "financialEyebrow": "Financial summary · NPR",
+    "allocated": "Project allocation",
+    "contracted": "Contract award",
+    "reportedPaid": "Reported payments",
+    "reportedBalance": "Reported contract balance",
+    "reportedBalanceNote": "Contract minus available payment records",
+    "unknown": "Unknown",
+    "notReported": "No payment data has been reported for this project.",
+    "procurementNotReported": "No procurement notice has been found for this project.",
+    "awardNotReported": "No contract award has been found for this project.",
+    "tenderReference": "Contract ID",
+    "invitationNumber": "IFB number",
+    "tenderEstimate": "Tender estimate",
+    "bidSecurity": "Bid security",
+    "bidDeadline": "Bid submission deadline",
+    "openTenderSource": "Open official procurement source",
+    "moneyTrailEyebrow": "Follow the money",
+    "moneyTrailTitle": "Allocation to physical progress",
+    "moneyTrailDescription": "Each step stays linked to the same project so amounts, dates, contractor details, payments, and milestones can be checked in context.",
+    "contractor": "Awarded contractor",
+    "awardReference": "Award reference",
+    "projectCode": "Project code",
+    "location": "Location",
+    "plannedCompletion": "Planned completion",
+    "chartEyebrow": "Visual comparison",
+    "chartTitle": "Allocation, contract, and reported payments",
+    "chartEmpty": "No comparable allocation, contract, or payment values have been reported.",
+    "mapEyebrow": "Project geography",
+    "mapTitle": "Where this project is located",
+    "mapDescription": "A marker appears only when a source-backed project location is available. Missing coordinates never block the evidence trail.",
+    "mapLabel": "Map location for {{title}}",
+    "mapUnavailable": "No coordinates have been reported for this project.",
+    "status": {
+      "unknown": "Status not evidenced",
+      "planned": "Planned",
+      "procurement": "Procurement",
+      "implementation": "In implementation",
+      "delayed": "Delayed",
+      "completed": "Completed",
+      "on_hold": "On hold"
+    },
+    "paymentStatus": {
+      "reported": "Sum of available reported payments",
+      "not_yet_reported": "Payment information is not yet reported"
+    },
+    "timeline": {
+      "allocation": "Budget allocated",
+      "procurementNotice": "Procurement notice published",
+      "contractAward": "Contract awarded",
+      "reportedPayments": "Payments reported",
+      "milestones": "Physical milestones"
+    },
+    "milestoneStatus": {
+      "not_started": "Not started",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "delayed": "Delayed"
+    },
+    "milestonesUnknown": "No official milestone or physical-progress record has been found yet."
+  },
+  "evidence": {
+    "eyebrow": "Traceable evidence",
+    "title": "Source documents and citations",
+    "description": "Project evidence is linked deliberately by claim type, page, section, and official source. A municipal document is never treated as proof of an unrelated project figure.",
+    "openLibrary": "Browse source library",
+    "syntheticBoundary": "This project contains synthetic demo figures. Official municipal documents may provide context, but they are not proof of those synthetic amounts.",
+    "loading": "Checking linked evidence…",
+    "error": "Linked evidence is temporarily unavailable. The project money trail remains accessible.",
+    "empty": "No source document has been linked to this project yet.",
+    "openCitation": "Open cited page",
+    "officialSource": "Official source",
+    "relationship": {
+      "context": "Municipal context",
+      "allocation": "Budget allocation",
+      "audit": "Official audit finding",
+      "procurement": "Procurement",
+      "payment": "Payment",
+      "progress": "Progress",
+      "completion": "Completion"
+    }
+  },
+  "documents": {
+    "back": "Back to overview",
+    "backToLibrary": "Back to source library",
+    "eyebrow": "Public evidence catalogue",
+    "title": "Government documents with page-level traceability",
+    "description": "Each original PDF is preserved, hashed, extracted page by page, and marked for review when OCR or text quality is uncertain.",
+    "loading": "Loading source documents…",
+    "error": "The source library could not be loaded.",
+    "detailError": "This source document could not be loaded.",
+    "empty": "No source documents are registered yet. Run the evidence ingestion command after seeding the database.",
+    "pages": "{{count}} pages",
+    "landingPageWarning": "The manifest currently records an official listing page; the exact attachment URL still requires verification.",
+    "inspect": "Inspect document",
+    "source": "Open official source",
+    "pdfTitle": "{{title}}, PDF page {{page}}",
+    "fileUnavailable": "The preserved local PDF is not available in this environment.",
+    "extractedText": "Extracted evidence",
+    "page": "Page {{number}}",
+    "method": "Method",
+    "quality": "Text quality",
+    "pagePending": "This page has not been extracted or accepted yet.",
+    "previous": "Previous page",
+    "next": "Next page",
+    "type": {
+      "budget_book": "Budget book",
+      "budget_speech": "Budget speech",
+      "annual_program": "Annual program",
+      "economic_act": "Economic act",
+      "progress_report": "Progress report",
+      "procurement_notice": "Procurement notice",
+      "contract_award": "Contract award",
+      "payment_record": "Payment record",
+      "audit_report": "Audit report",
+      "other": "Other document"
+    },
+    "status": {
+      "pending": "Pending extraction",
+      "extracting": "Extracting",
+      "extracted": "Text extracted",
+      "needs_review": "Review needed",
+      "approved": "Approved",
+      "failed": "Extraction failed"
+    },
+    "review": {
+      "pending": "Pending",
+      "auto_accepted": "Quality accepted",
+      "review_required": "Human review needed",
+      "approved": "Human approved",
+      "rejected": "Rejected"
+    },
+    "methodValue": {
+      "embedded_text": "Embedded PDF text",
+      "ocr": "Nepali/English OCR",
+      "none": "No usable text"
+    }
+  },
+  "footer": {
+    "description": "CodeFest 2026 · Team Die Vordenker",
+    "disclaimer": "Hackathon prototype · Mock identity provider"
+  }
+}

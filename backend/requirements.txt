@@ -1,0 +1,30 @@
+# Budget Darpan backend — Phase 1 public money-trail slice
+# Update this file as each tested vertical slice introduces a dependency.
+
+# Web/API
+Django==5.2.16
+djangorestframework==3.17.1
+django-filter==26.1
+django-cors-headers==4.9.0
+drf-spectacular==0.30.0
+
+# Configuration and deployment database readiness
+dj-database-url==3.1.2
+python-dotenv==1.2.2
+whitenoise==6.12.0
+psycopg[binary]==3.3.4
+
+# Authentication, verification, and uploads
+PyJWT[crypto]==2.13.0
+Pillow==12.3.0
+
+# Phase 2 evidence extraction and selective bilingual OCR
+PyMuPDF==1.28.0
+pdf2image==1.17.0
+pytesseract==0.3.13
+
+# Quality gates
+pytest==9.1.1
+pytest-django==4.12.0
+pytest-cov==7.1.0
+ruff==0.15.22

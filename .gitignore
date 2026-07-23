@@ -1,0 +1,50 @@
+# Local Codex/agent engineering instructions must never be committed.
+AGENTS.md
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Django
+*.sqlite3
+media/
+staticfiles/
+
+# Frontend
+node_modules/
+dist/
+coverage/
+*.local
+
+# AI/vector runtime data
+chroma_db/
+.chroma/
+
+# Local evidence corpus. Commit the manifest, never the downloaded source PDFs.
+datasets/**/*.pdf
+datasets/**/*.PDF
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

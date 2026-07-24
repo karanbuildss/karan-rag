@@ -65,7 +65,11 @@ class SourceDocumentViewSet(EnvelopeReadOnlyModelViewSet):
         queryset = SourceDocument.objects.select_related("local_government", "fiscal_year")
         if self.action == "retrieve":
             page_queryset = DocumentPage.objects.defer("extracted_text").order_by("page_number")
-            queryset = queryset.prefetch_related(Prefetch("pages", queryset=page_queryset))
+            queryset = queryset.prefetch_related(
+                Prefetch("pages", queryset=page_queryset),
+                "project_links__project",
+                "budget_allocations__subsector__sector",
+            )
         return queryset
 
     def get_serializer_class(self):

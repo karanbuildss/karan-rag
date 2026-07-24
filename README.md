@@ -196,6 +196,7 @@ The evidence vertical slice now includes:
 - selective Tesseract `nep+eng` fallback using a single page render, confidence metadata, explicit warnings, and mandatory review for OCR-derived text;
 - public document list, detail, page, processing-status, and project-evidence APIs with stable citation metadata;
 - an English/Nepali source library and side-by-side PDF-or-image/extracted-text viewer;
+- a hosted official-source record view that replaces empty PDF frames with source authority, availability, reviewed catalogue notes, cited pages, and related-project links when preserved files are intentionally not deployed;
 - a Leaflet/OpenStreetMap project map and Recharts financial comparison connected to the Phase 1 project page;
 - curated project-document links that cite the Jalpa Marg budget entry on PDF page 168, the FY 2077/78 tender and addendum, and the related audit entry on PDF page 48 without treating a probable record join as proven identity;
 - separate FY 2078/79 road-upgrading and FY 2082/83 footpath procurement records with unknown allocations, preventing later packages from being silently merged into the FY 2077/78 project.

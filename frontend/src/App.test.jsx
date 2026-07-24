@@ -58,6 +58,8 @@ vi.mock('./api/client', () => ({
 
 import {
   getBudgetComparison,
+  getDocument,
+  getDocumentPage,
   getDocuments,
   getDocumentReviewQueue,
   getFiscalYears,
@@ -562,6 +564,61 @@ describe('Budget Darpan foundation', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.getByText(/exact attachment URL still requires verification/i)).toBeInTheDocument()
+  })
+
+  it('renders hosted metadata as an official source record with cited context', async () => {
+    const documentId = '00000000-0000-0000-0000-000000000005'
+    const projectId = '6f3ef140-e6b9-4d6b-915f-74080c804208'
+    window.history.replaceState({}, '', `/documents/${documentId}?page=5`)
+    getDocument.mockResolvedValue({
+      data: {
+        id: documentId,
+        title_en: 'Pokhara Jalpa Marg Footpath Bid Addendum 2082/83',
+        title_np: '',
+        document_type: 'procurement_notice',
+        processing_status: 'pending',
+        hosted_metadata_only: true,
+        file_url: null,
+        source_url: 'https://bolpatra.gov.np/egp/searchOpportunity',
+        source_note: 'Official procurement portal record.',
+        fiscal_year_bs: '2082/83',
+        local_government_name_en: 'Pokhara Metropolitan City',
+        local_government_name_np: 'पोखरा महानगरपालिका',
+        page_count: 5,
+        pages: [],
+        catalog_evidence: [
+          {
+            kind: 'project_evidence',
+            relationship: 'procurement',
+            page_from: 5,
+            page_to: 5,
+            section: 'Bid addendum',
+            summary_en: 'The official addendum extends the cited procurement record.',
+            summary_np: '',
+            project: {
+              id: projectId,
+              code: 'PKR-JALPA-2082-83',
+              title_en: 'Jalpa Marg Footpath Procurement',
+              title_np: '',
+            },
+          },
+        ],
+      },
+    })
+
+    render(<App />)
+
+    expect(await screen.findByText('Official source record')).toBeInTheDocument()
+    expect(screen.getByText('Cited page 5')).toBeInTheDocument()
+    expect(
+      screen.getByText('The official addendum extends the cited procurement record.'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Open related project/i })).toHaveAttribute(
+      'href',
+      `/projects/${projectId}`,
+    )
+    expect(screen.queryByText('This page has not been extracted or accepted yet.')).not.toBeInTheDocument()
+    expect(getDocumentPage).not.toHaveBeenCalled()
   })
 
   it('discovers projects while keeping unknown allocations visible', async () => {

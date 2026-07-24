@@ -445,6 +445,21 @@
     "quality": "Text quality",
     "pagePending": "This page has not been extracted or accepted yet.",
     "pagePendingHelp": "The original source remains viewable on the left. Only reviewed or accepted text is added to the AI knowledge base.",
+    "officialRecord": "Official source record",
+    "availableFrom": "Available from {{municipality}}",
+    "metadataBoundary": "The official link and reviewed citation metadata are available in this hosted demo. The preserved working copy stays in the controlled research corpus and is not exposed as a public file.",
+    "sourceAuthority": "Source authority",
+    "fiscalYear": "Fiscal year",
+    "documentType": "Document type",
+    "hostedAvailability": "Hosted availability",
+    "linkAvailable": "Official link available · preserved copy not deployed",
+    "catalogEvidence": "Cited catalogue evidence",
+    "citedPage": "Cited page {{number}}",
+    "catalogNoCitation": "No page-specific reviewed note is registered for this source yet.",
+    "catalogNoCitationHelp": "The official source link and document metadata remain available. This record is not added to the AI knowledge base until text is reviewed or accepted.",
+    "allocated": "Reviewed allocation",
+    "reportedSpent": "Reviewed reported spending",
+    "openRelatedProject": "Open related project",
     "previous": "Previous page",
     "next": "Next page",
     "type": {
@@ -466,7 +481,8 @@
       "extracted": "Text extracted",
       "needs_review": "Review needed",
       "approved": "Approved",
-      "failed": "Extraction failed"
+      "failed": "Extraction failed",
+      "official_link_registered": "Official link registered"
     },
     "review": {
       "pending": "Pending",

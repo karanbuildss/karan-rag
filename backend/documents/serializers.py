@@ -17,6 +17,7 @@ class SourceDocumentListSerializer(serializers.ModelSerializer):
     fiscal_year_code = serializers.CharField(source="fiscal_year.code", read_only=True)
     fiscal_year_bs = serializers.CharField(source="fiscal_year.year_bs", read_only=True)
     file_url = serializers.SerializerMethodField()
+    hosted_metadata_only = serializers.SerializerMethodField()
 
     class Meta:
         model = SourceDocument
@@ -35,6 +36,7 @@ class SourceDocumentListSerializer(serializers.ModelSerializer):
             "processing_status",
             "page_count",
             "file_url",
+            "hosted_metadata_only",
             "local_government_code",
             "local_government_name_en",
             "local_government_name_np",
@@ -52,6 +54,13 @@ class SourceDocumentListSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         file_path = reverse("source-document-file", kwargs={"pk": instance.pk})
         return request.build_absolute_uri(file_path) if request else file_path
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_hosted_metadata_only(self, instance) -> bool:
+        return bool(
+            not instance.original_file
+            and instance.data_classification != DataClassification.SYNTHETIC_DEMO
+        )
 
 
 class DocumentPageSummarySerializer(serializers.ModelSerializer):
@@ -86,9 +95,72 @@ class DocumentPageDetailSerializer(DocumentPageSummarySerializer):
 
 class SourceDocumentDetailSerializer(SourceDocumentListSerializer):
     pages = DocumentPageSummarySerializer(many=True, read_only=True)
+    catalog_evidence = serializers.SerializerMethodField()
 
     class Meta(SourceDocumentListSerializer.Meta):
-        fields = [*SourceDocumentListSerializer.Meta.fields, "sha256", "extracted_at", "pages"]
+        fields = [
+            *SourceDocumentListSerializer.Meta.fields,
+            "sha256",
+            "extracted_at",
+            "pages",
+            "catalog_evidence",
+        ]
+
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
+    def get_catalog_evidence(self, instance) -> list[dict]:
+        """Return reviewed, human-authored catalogue context for hosted metadata records."""
+        evidence = []
+        for link in instance.project_links.all():
+            evidence.append(
+                {
+                    "kind": "project_evidence",
+                    "relationship": link.relationship,
+                    "page_from": link.page_from,
+                    "page_to": link.page_to,
+                    "section": link.section,
+                    "summary_en": link.evidence_note_en,
+                    "summary_np": link.evidence_note_np,
+                    "project": {
+                        "id": str(link.project_id),
+                        "code": link.project.code,
+                        "title_en": link.project.title_en,
+                        "title_np": link.project.title_np,
+                    },
+                }
+            )
+
+        for allocation in instance.budget_allocations.all():
+            if allocation.review_status != "reviewed":
+                continue
+            sector = allocation.subsector.sector
+            evidence.append(
+                {
+                    "kind": "reviewed_budget_fact",
+                    "relationship": "allocation",
+                    "page_from": allocation.source_page,
+                    "page_to": allocation.source_page,
+                    "section": sector.name_en,
+                    "section_np": sector.name_np,
+                    "summary_en": allocation.source_scope_en,
+                    "summary_np": allocation.source_scope_np,
+                    "allocated_amount": str(allocation.allocated_amount),
+                    "spent_amount": (
+                        str(allocation.spent_amount)
+                        if allocation.spent_amount is not None
+                        else None
+                    ),
+                    "project": None,
+                }
+            )
+
+        return sorted(
+            evidence,
+            key=lambda item: (
+                item["page_from"] is None,
+                item["page_from"] or 0,
+                item["kind"],
+            ),
+        )
 
 
 class ProjectDocumentLinkSerializer(serializers.ModelSerializer):

@@ -215,3 +215,27 @@ class HostedEvidenceCatalogTests(TestCase):
             SourceDocument.objects.filter(data_classification="official").count(),
             10,
         )
+
+    def test_hosted_document_detail_exposes_reviewed_catalogue_context(self):
+        document = (
+            SourceDocument.objects.filter(
+                data_classification="official",
+                project_links__isnull=False,
+            )
+            .distinct()
+            .first()
+        )
+
+        response = APIClient().get(reverse("source-document-detail", kwargs={"pk": document.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.data["data"]
+        self.assertTrue(payload["hosted_metadata_only"])
+        self.assertIsNone(payload["file_url"])
+        self.assertTrue(payload["source_url"].startswith("https://"))
+        self.assertGreater(len(payload["catalog_evidence"]), 0)
+        evidence = payload["catalog_evidence"][0]
+        self.assertEqual(evidence["kind"], "project_evidence")
+        self.assertGreaterEqual(evidence["page_from"], 1)
+        self.assertTrue(evidence["summary_en"])
+        self.assertTrue(evidence["project"]["id"])

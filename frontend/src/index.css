@@ -49,6 +49,8 @@
   }
 
   .nav-link {
+    position: relative;
+    flex: 0 0 auto;
     color: var(--color-muted);
     font-size: 0.875rem;
     font-weight: 700;
@@ -57,6 +59,69 @@
 
   .nav-link:hover {
     color: var(--color-forest);
+  }
+
+  .nav-link--active {
+    color: var(--color-forest);
+  }
+
+  .nav-link--active::after {
+    position: absolute;
+    right: 0;
+    bottom: -0.45rem;
+    left: 0;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--color-amber);
+    content: "";
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid var(--color-line);
+    background: rgb(248 247 242 / 96%);
+    box-shadow: 0 1px 0 rgb(16 60 55 / 4%);
+    backdrop-filter: blur(12px);
+  }
+
+  .site-header__inner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(1rem, 2vw, 2rem);
+    min-height: 5rem;
+    padding-block: 0.55rem;
+  }
+
+  .site-logo-link {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .site-logo {
+    display: block;
+    width: clamp(10.5rem, 14vw, 13rem);
+    height: auto;
+  }
+
+  .site-primary-nav,
+  .site-header-actions {
+    display: flex;
+    align-items: center;
+  }
+
+  .site-primary-nav {
+    justify-content: center;
+    gap: clamp(0.9rem, 1.5vw, 1.75rem);
+    min-width: 0;
+  }
+
+  .site-header-actions {
+    gap: 0.8rem;
+    white-space: nowrap;
   }
 
   .language-button {
@@ -71,6 +136,46 @@
     font-size: 0.85rem;
     font-weight: 800;
     cursor: pointer;
+  }
+
+  @media (max-width: 1120px) {
+    .site-header__inner {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.45rem 1rem;
+      padding-bottom: 0.7rem;
+    }
+
+    .site-primary-nav {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: flex-start;
+      overflow-x: auto;
+      padding: 0.35rem 0 0.55rem;
+      scrollbar-width: thin;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .site-header__inner {
+      width: 100%;
+      padding-inline: 1rem;
+    }
+
+    .site-logo {
+      width: 9.5rem;
+    }
+
+    .site-header-actions {
+      gap: 0.55rem;
+    }
+
+    .site-header-actions .nav-link {
+      font-size: 0.75rem;
+    }
+
+    .language-button {
+      padding: 0.5rem 0.65rem;
+    }
   }
 
   .eyebrow {

@@ -21,6 +21,8 @@ The release candidate connects each demo-critical capability from data model thr
 | Accountability | Explainable anomaly indicators, authentication, independent mock verification, and duplicate-safe feedback | Verified |
 | Demonstration | Official evidence paths plus a visibly labelled synthetic complete-flow reference project | Verified |
 
+The shared responsive header uses the CodeFest wordmark, preserves the same complete navigation on every route, and remains sticky while citizens inspect long evidence and project pages.
+
 The detailed product brief is in [README_VORDENKER.md](README_VORDENKER.md), and the engineering sequence is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
 ## Winning-demo strategy

@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -564,6 +564,40 @@ describe('Budget Darpan foundation', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.getByText(/exact attachment URL still requires verification/i)).toBeInTheDocument()
+  })
+
+  it('keeps the complete branded navigation on a secondary route', async () => {
+    window.history.replaceState({}, '', '/compare')
+
+    render(<App />)
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Compare reported budget and spending without hiding evidence gaps.',
+      }),
+    ).toBeInTheDocument()
+    const header = screen.getByRole('banner')
+    const navigation = within(header).getByRole('navigation', { name: 'Primary navigation' })
+    const logo = within(header).getByRole('img', { name: 'Budget Darpan' })
+
+    expect(header).toHaveClass('site-header')
+    expect(logo).toHaveAttribute('src', '/logo-codefest.svg')
+    for (const name of [
+      'Projects',
+      'Compare',
+      'Map',
+      'Review indicators',
+      'Source library',
+      'Civic investigator',
+    ]) {
+      expect(within(navigation).getByRole('link', { name })).toBeInTheDocument()
+    }
+    expect(within(header).getByRole('link', { name: 'Account' })).toBeInTheDocument()
+    expect(within(header).getByRole('link', { name: 'History' })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: 'Compare' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   })
 
   it('renders hosted metadata as an official source record with cited context', async () => {

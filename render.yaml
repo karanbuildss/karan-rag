@@ -2,6 +2,7 @@ services:
   - type: web
     name: budget-darpan-api
     runtime: python
+    region: singapore
     plan: free
     buildCommand: pip install -r backend/requirements.txt && python backend/manage.py collectstatic --noinput
     startCommand: bash scripts/start_backend_production.sh
@@ -50,6 +51,7 @@ services:
   - type: web
     name: budget-darpan-identity
     runtime: python
+    region: singapore
     plan: free
     buildCommand: pip install -r mock-identity-server/requirements.txt
     startCommand: bash scripts/start_identity_production.sh

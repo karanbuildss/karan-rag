@@ -24,6 +24,8 @@ class ProjectSerializer(serializers.ModelSerializer):
     subsector_name_en = serializers.CharField(source="subsector.name_en", read_only=True)
     subsector_name_np = serializers.CharField(source="subsector.name_np", read_only=True)
     location = ProjectLocationSerializer(read_only=True, allow_null=True)
+    evidence_count = serializers.IntegerField(read_only=True)
+    tender_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Project
@@ -53,7 +55,69 @@ class ProjectSerializer(serializers.ModelSerializer):
             "subsector_name_en",
             "subsector_name_np",
             "location",
+            "evidence_count",
+            "tender_count",
         ]
+
+
+class ProjectDiscoveryTotalsSerializer(serializers.Serializer):
+    project_count = serializers.IntegerField()
+    known_allocation_count = serializers.IntegerField()
+    unknown_allocation_count = serializers.IntegerField()
+    allocated_total = serializers.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        allow_null=True,
+    )
+    evidence_project_count = serializers.IntegerField()
+    procurement_project_count = serializers.IntegerField()
+    payment_reported_project_count = serializers.IntegerField()
+    geolocated_project_count = serializers.IntegerField()
+    currency = serializers.CharField()
+
+
+class ProjectDiscoveryFiscalYearSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    year_bs = serializers.CharField()
+    year_ad = serializers.CharField()
+    project_count = serializers.IntegerField()
+    known_allocation_count = serializers.IntegerField()
+    allocated_total = serializers.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        allow_null=True,
+    )
+
+
+class ProjectDiscoverySectorSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name_en = serializers.CharField()
+    name_np = serializers.CharField()
+    project_count = serializers.IntegerField()
+    known_allocation_count = serializers.IntegerField()
+    allocated_total = serializers.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        allow_null=True,
+    )
+
+
+class ProjectDiscoveryStatusSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    project_count = serializers.IntegerField()
+
+
+class ProjectDiscoverySummarySerializer(serializers.Serializer):
+    totals = ProjectDiscoveryTotalsSerializer()
+    by_fiscal_year = ProjectDiscoveryFiscalYearSerializer(many=True)
+    by_sector = ProjectDiscoverySectorSerializer(many=True)
+    by_status = ProjectDiscoveryStatusSerializer(many=True)
+
+
+class ProjectDiscoverySummaryResponseSerializer(serializers.Serializer):
+    data = ProjectDiscoverySummarySerializer()
+    meta = serializers.DictField()
+    errors = serializers.ListField()
 
 
 class ProjectMoneyTrailSerializer(serializers.Serializer):

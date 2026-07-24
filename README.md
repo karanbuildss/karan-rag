@@ -19,8 +19,8 @@ The project is being delivered as complete vertical slices. A phase is complete 
 | 2 — Evidence experience | Maps, charts, document viewer, OCR with page traceability | Complete |
 | 2A — Real evidence baseline | Official budget, procurement, addendum, and audit linkage with explicit missing-data states | Complete |
 | 3A — Jalpa civic investigator | Query router, database facts, local RAG, citations, multilingual answers, safe fallbacks | Complete |
-| 3B — Project discovery | Searchable dashboard, filters, comparison, and evidence-led project discovery | Next |
-| 4 — Accountability | Explainable anomalies, authentication, mock verification, duplicate-safe feedback | Planned |
+| 3B — Project discovery | Searchable dashboard, filters, comparison, and evidence-led project discovery | Complete |
+| 4 — Accountability | Explainable anomalies, authentication, mock verification, duplicate-safe feedback | Next |
 | 5 — Demo hardening | End-to-end acceptance test, accessibility, performance, deployment, backup demo | Planned |
 
 The detailed product brief is in [README_VORDENKER.md](README_VORDENKER.md), and the engineering sequence is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
@@ -278,6 +278,35 @@ Example request:
 The verified local response routes this to `PROJECT_INVESTIGATION`, reports the NPR 800,000 allocation and the NPR 9,477,987.16 tender estimate with the correct evidence boundary, keeps award and payment unknown, and cites budget page 168, procurement page 1, and audit page 48.
 
 Current verified gates: 40 backend tests in both Django and Pytest, 8 frontend tests, Ruff lint/format, frontend lint, production build, migration drift check, dependency integrity, warning-free OpenAPI generation, 5/5 multilingual retrieval evaluation, live Chroma indexing, and live Ollama embedding/chat smoke tests.
+
+## Phase 3B verification
+
+The public discovery slice turns the existing project records into a judge-ready entry point without creating a second data pipeline:
+
+- `/budgets` provides bilingual project and procurement-reference search with municipality, ward, fiscal-year, sector, and status filters;
+- filters are stored in the URL so a discovery or comparison can be shared and reopened;
+- project cards expose allocation, linked-evidence count, tender count, fiscal year, ward, status, classification context, and an immediate route into the complete money trail;
+- `GET /api/v1/projects/discovery-summary/` applies the same filters as the project list and returns structured totals by fiscal year, sector, and status;
+- known allocation totals exclude missing values while separate known and unknown counts prevent absent data from silently becoming zero;
+- `/compare` charts only reported allocations and keeps every filtered project in an accessible table, including projects whose allocation remains unknown;
+- `/map` plots only source-backed coordinates and presents an evidence-gap state for the current Jalpa records rather than inventing locations;
+- English and Nepali interfaces share one component system, loading/error/empty states, and keyboard-accessible filters;
+- navigation now leads from the landing page to discovery, comparison, map, documents, and the evidence-led project investigation.
+
+Phase 3B endpoints and pages:
+
+```text
+GET /api/v1/projects/?search=45/PMC/NCB/W/077-78
+GET /api/v1/projects/discovery-summary/?fiscal_year__code=2077-78
+
+http://localhost:5173/budgets
+http://localhost:5173/compare
+http://localhost:5173/map
+```
+
+No dependency or API key was added for this phase. The slice reuses Django filtering, relational aggregates, Recharts, Leaflet, and the existing bilingual frontend. The next real-data upgrades are verified project coordinates and additional award, payment, progress, and comparison-project records.
+
+Current verified gates: 43 backend tests in both Django and Pytest, 11 frontend tests, Ruff lint/format, frontend lint, production build, migration drift check, dependency integrity, and warning-free OpenAPI generation.
 
 ## Dependency policy
 

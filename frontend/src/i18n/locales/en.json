@@ -10,7 +10,9 @@
   },
   "navigation": {
     "label": "Primary navigation",
-    "moneyTrail": "Money trail",
+    "projects": "Projects",
+    "compare": "Compare",
+    "map": "Map",
     "documents": "Source library",
     "principles": "Our standard",
     "status": "Build status"
@@ -19,7 +21,8 @@
     "eyebrow": "Evidence-led civic transparency",
     "title": "See where public money goes—and the evidence behind it.",
     "description": "Explore local budgets, follow projects from allocation to payment, and ask clear questions in English, Nepali, or Romanized Nepali.",
-    "primaryAction": "Follow the money trail",
+    "primaryAction": "Explore public projects",
+    "projectAction": "Open the Jalpa investigation",
     "secondaryAction": "See our evidence standard",
     "safety": "Budget Darpan does not accuse. It identifies patterns and evidence that may require further review."
   },
@@ -76,6 +79,91 @@
     "connecting": "Checking local API…",
     "connected": "Local API connected",
     "offline": "API unavailable · browsing fallback remains"
+  },
+  "discovery": {
+    "modes": {
+      "list": {
+        "eyebrow": "Evidence-led project discovery",
+        "title": "Find the public project behind the budget line.",
+        "description": "Search real project records by municipality, ward, fiscal year, sector, or status, then open the complete money trail and its cited evidence."
+      },
+      "compare": {
+        "eyebrow": "Structured comparison",
+        "title": "Compare only what the records actually report.",
+        "description": "Known allocations are charted from the relational database. Unknown contract, payment, and progress values stay visibly unknown."
+      },
+      "map": {
+        "eyebrow": "Source-backed locations",
+        "title": "See projects with verified coordinates.",
+        "description": "Map markers appear only when a source-backed project location exists. Missing coordinates are shown as a data gap, never guessed."
+      }
+    },
+    "evidenceBoundary": "Totals include only reported numeric values. Unknown amounts are counted separately and never converted to zero.",
+    "viewNavigation": "Project discovery views",
+    "tabs": {
+      "list": "Browse projects",
+      "compare": "Compare allocations",
+      "map": "Project map"
+    },
+    "filters": {
+      "eyebrow": "Narrow the evidence",
+      "title": "Search and filters",
+      "clear": "Clear all",
+      "searchLabel": "Project or reference",
+      "searchPlaceholder": "Jalpa, road, contract ID…",
+      "searchAction": "Search",
+      "municipality": "Municipality",
+      "ward": "Ward",
+      "anyWard": "Any",
+      "fiscalYear": "Fiscal year",
+      "sector": "Sector",
+      "status": "Status",
+      "all": "All"
+    },
+    "loading": "Loading project records and structured totals…",
+    "errorTitle": "Project discovery is temporarily unavailable.",
+    "errorDescription": "Check that the Budget Darpan API is running, then try again.",
+    "empty": "No projects match these filters. Clear one or more filters and try again.",
+    "summary": {
+      "label": "Filtered project summary",
+      "projects": "Projects found",
+      "projectDetail": "Distinct project records in the current filters",
+      "knownAllocation": "Known allocation total",
+      "allocationDetail": "Reported for {{count}} of {{total}} projects",
+      "evidence": "Projects with evidence",
+      "evidenceDetail": "At least one deliberately linked source record",
+      "unknownAllocation": "Unknown allocations",
+      "reportingDetail": "{{procurement}} with procurement · {{payments}} with reported payments"
+    },
+    "results": {
+      "eyebrow": "Filtered public records",
+      "count": "{{count}} project records",
+      "unknownReminder": "Unknown means not evidenced, not zero."
+    },
+    "card": {
+      "wardUnknown": "Ward not reported",
+      "allocation": "Allocation",
+      "evidence": "Evidence links",
+      "tenders": "Tenders",
+      "open": "Open money trail"
+    },
+    "compare": {
+      "eyebrow": "Allocation comparison",
+      "title": "Known project allocations",
+      "description": "The chart excludes unknown amounts. The table keeps every filtered project visible so missing data cannot disappear from the comparison.",
+      "noKnownValues": "None of the filtered projects has a reported allocation amount.",
+      "tableCaption": "Filtered project allocation comparison",
+      "project": "Project"
+    },
+    "map": {
+      "eyebrow": "Project geography",
+      "title": "Projects with reported coordinates",
+      "count": "{{count}} projects can be placed from available location evidence.",
+      "label": "Map of projects with source-backed coordinates",
+      "emptyTitle": "No verified coordinates are available for these projects yet.",
+      "emptyDescription": "The money trail and source evidence remain available. Add a government project location, engineering record, or other reliable coordinate source before placing a marker.",
+      "safety": "Budget Darpan never estimates a project location from a citizen address or an unverified place-name match."
+    }
   },
   "project": {
     "loading": "Loading the project money trail…",

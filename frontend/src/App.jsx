@@ -9,6 +9,7 @@ import { DEMO_PROJECT_ID } from './config'
 
 const DocumentDetailPage = lazy(() => import('./pages/DocumentDetailPage'))
 const DocumentLibraryPage = lazy(() => import('./pages/DocumentLibraryPage'))
+const ProjectDiscoveryPage = lazy(() => import('./pages/ProjectDiscoveryPage'))
 const ProjectPage = lazy(() => import('./pages/ProjectPage'))
 
 const journeyKeys = ['allocation', 'project', 'payment', 'evidence']
@@ -43,10 +44,12 @@ function HomePage() {
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">{t('hero.description')}</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link className="primary-action" to={`/projects/${DEMO_PROJECT_ID}`}>
+              <Link className="primary-action" to="/budgets">
                 {t('hero.primaryAction')}
               </Link>
-              <a className="secondary-action" href="#principles">{t('hero.secondaryAction')}</a>
+              <Link className="secondary-action" to={`/projects/${DEMO_PROJECT_ID}`}>
+                {t('hero.projectAction')}
+              </Link>
             </div>
             <p className="mt-8 flex max-w-2xl items-start gap-3 border-l-2 border-amber pl-4 text-sm leading-6 text-muted">
               <span aria-hidden="true" className="mt-0.5 text-amber">◆</span>
@@ -157,6 +160,9 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/documents" element={<DocumentLibraryPage />} />
           <Route path="/documents/:documentId" element={<DocumentDetailPage />} />
+          <Route path="/budgets" element={<ProjectDiscoveryPage mode="list" />} />
+          <Route path="/compare" element={<ProjectDiscoveryPage mode="compare" />} />
+          <Route path="/map" element={<ProjectDiscoveryPage mode="map" />} />
           <Route path="/projects/:projectId" element={<ProjectPage />} />
         </Routes>
       </Suspense>

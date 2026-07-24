@@ -30,18 +30,19 @@ export default function SiteHeader({ compact = false }) {
 
         {!compact && (
           <nav aria-label={t('navigation.label')} className="hidden items-center gap-7 md:flex">
-            <a className="nav-link" href="#money-trail">{t('navigation.moneyTrail')}</a>
+            <Link className="nav-link" to="/budgets">{t('navigation.projects')}</Link>
+            <Link className="nav-link" to="/compare">{t('navigation.compare')}</Link>
+            <Link className="nav-link" to="/map">{t('navigation.map')}</Link>
             <Link className="nav-link" to="/documents">{t('navigation.documents')}</Link>
-            <a className="nav-link" href="#principles">{t('navigation.principles')}</a>
-            <a className="nav-link" href="#status">{t('navigation.status')}</a>
           </nav>
         )}
 
         <div className="flex items-center gap-2">
           {compact && (
-            <Link className="nav-link hidden sm:inline" to="/documents">
-              {t('navigation.documents')}
-            </Link>
+            <div className="hidden items-center gap-4 sm:flex">
+              <Link className="nav-link" to="/budgets">{t('navigation.projects')}</Link>
+              <Link className="nav-link" to="/documents">{t('navigation.documents')}</Link>
+            </div>
           )}
           <button className="language-button" onClick={changeLanguage} type="button">
             <span aria-hidden="true">अ</span>

@@ -27,16 +27,26 @@ vi.mock('./api/client', () => ({
   getDocument: vi.fn(),
   getDocumentPage: vi.fn(),
   getDocuments: vi.fn(),
+  getFiscalYears: vi.fn(),
   getHealth: vi.fn(),
+  getLocalGovernments: vi.fn(),
+  getProjectDiscoverySummary: vi.fn(),
   getProjectEvidence: vi.fn(),
   getProjectMoneyTrail: vi.fn(),
+  getProjects: vi.fn(),
+  getSectors: vi.fn(),
 }))
 
 import {
   getDocuments,
+  getFiscalYears,
   getHealth,
+  getLocalGovernments,
+  getProjectDiscoverySummary,
   getProjectEvidence,
   getProjectMoneyTrail,
+  getProjects,
+  getSectors,
 } from './api/client'
 
 const moneyTrail = {
@@ -95,12 +105,86 @@ const moneyTrail = {
   },
 }
 
+const discoveryProjects = [
+  {
+    id: '6f3ef140-e6b9-4d6b-915f-74080c804208',
+    code: 'PKR-W08-JALPA-2077-78',
+    title_en: 'Jalpa Marg Ward 8 Road Works',
+    title_np: 'जाल्पा मार्ग वडा नं. ८ सडक कार्य',
+    status: 'unknown',
+    allocated_amount: '800000.00',
+    data_note_en: 'Award, payment, progress, and coordinates remain unknown.',
+    data_note_np: 'ठेक्का, भुक्तानी, प्रगति र निर्देशाङ्क अज्ञात छन्।',
+    local_government_name_en: 'Pokhara Metropolitan City',
+    local_government_name_np: 'पोखरा महानगरपालिका',
+    ward_number: 8,
+    fiscal_year_code: '2077-78',
+    subsector_name_en: 'Roads',
+    subsector_name_np: 'सडक',
+    evidence_count: 4,
+    tender_count: 1,
+    location: null,
+  },
+  {
+    id: '2fb7eb1c-8b5a-4df8-9737-5c2dbb5399c4',
+    code: 'PKR-W08-JALPA-UPGRADE-2078-79',
+    title_en: 'Jalpa Marg Upgrading Procurement 2078/79',
+    title_np: 'जाल्पा मार्ग स्तरोन्नति खरिद २०७८/७९',
+    status: 'unknown',
+    allocated_amount: null,
+    data_note_en: 'Only the procurement notice is available.',
+    data_note_np: 'खरिद सूचना मात्र उपलब्ध छ।',
+    local_government_name_en: 'Pokhara Metropolitan City',
+    local_government_name_np: 'पोखरा महानगरपालिका',
+    ward_number: 8,
+    fiscal_year_code: '2078-79',
+    subsector_name_en: 'Roads',
+    subsector_name_np: 'सडक',
+    evidence_count: 1,
+    tender_count: 1,
+    location: null,
+  },
+]
+
+const discoverySummary = {
+  data: {
+    totals: {
+      project_count: 2,
+      known_allocation_count: 1,
+      unknown_allocation_count: 1,
+      allocated_total: '800000.00',
+      evidence_project_count: 2,
+      procurement_project_count: 2,
+      payment_reported_project_count: 0,
+      geolocated_project_count: 0,
+      currency: 'NPR',
+    },
+    by_fiscal_year: [],
+    by_sector: [],
+    by_status: [{ status: 'unknown', project_count: 2 }],
+  },
+}
+
 describe('Budget Darpan foundation', () => {
   beforeEach(async () => {
     window.history.replaceState({}, '', '/')
     await i18n.changeLanguage('en')
     document.documentElement.lang = 'en'
     getProjectEvidence.mockResolvedValue({ data: [] })
+    getProjects.mockResolvedValue({ data: discoveryProjects })
+    getProjectDiscoverySummary.mockResolvedValue(discoverySummary)
+    getLocalGovernments.mockResolvedValue({
+      data: [{ code: 'PKR', name_en: 'Pokhara Metropolitan City', name_np: 'पोखरा महानगरपालिका' }],
+    })
+    getFiscalYears.mockResolvedValue({
+      data: [
+        { code: '2078-79', year_bs: '2078/79' },
+        { code: '2077-78', year_bs: '2077/78' },
+      ],
+    })
+    getSectors.mockResolvedValue({
+      data: [{ code: 'infrastructure', name_en: 'Infrastructure', name_np: 'पूर्वाधार' }],
+    })
   })
 
   afterEach(() => {
@@ -279,5 +363,62 @@ describe('Budget Darpan foundation', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.getByText(/exact attachment URL still requires verification/i)).toBeInTheDocument()
+  })
+
+  it('discovers projects while keeping unknown allocations visible', async () => {
+    window.history.replaceState({}, '', '/budgets')
+    render(<App />)
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Find the public project behind the budget line.',
+      }),
+    ).toBeInTheDocument()
+    expect(await screen.findByText('Jalpa Marg Ward 8 Road Works')).toBeInTheDocument()
+    expect(screen.getByText('Jalpa Marg Upgrading Procurement 2078/79')).toBeInTheDocument()
+    expect(screen.getByText('2 project records')).toBeInTheDocument()
+    expect(screen.getByText('Unknown means not evidenced, not zero.')).toBeInTheDocument()
+    expect(screen.getAllByText('Unknown').length).toBeGreaterThan(0)
+  })
+
+  it('applies a shareable project search to list and summary requests', async () => {
+    window.history.replaceState({}, '', '/budgets')
+    const user = userEvent.setup()
+    render(<App />)
+
+    const search = await screen.findByRole('searchbox', { name: 'Project or reference' })
+    await user.type(search, '45/PMC/NCB/W/077-78')
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+
+    await waitFor(() => {
+      expect(getProjects).toHaveBeenCalledWith(
+        expect.objectContaining({ search: '45/PMC/NCB/W/077-78' }),
+      )
+      expect(getProjectDiscoverySummary).toHaveBeenCalledWith(
+        expect.objectContaining({ search: '45/PMC/NCB/W/077-78' }),
+      )
+    })
+    expect(window.location.search).toContain('search=45%2FPMC%2FNCB%2FW%2F077-78')
+  })
+
+  it('renders comparison and honest empty-map states from the same filters', async () => {
+    window.history.replaceState({}, '', '/compare?fiscalYear=2077-78')
+    const { unmount } = render(<App />)
+
+    expect(await screen.findByText('Known project allocations')).toBeInTheDocument()
+    expect(screen.getByRole('table')).toHaveTextContent('Jalpa Marg Ward 8 Road Works')
+    expect(getProjects).toHaveBeenCalledWith(
+      expect.objectContaining({ fiscal_year__code: '2077-78' }),
+    )
+
+    unmount()
+    window.history.replaceState({}, '', '/map')
+    render(<App />)
+    expect(
+      await screen.findByRole('heading', {
+        name: 'No verified coordinates are available for these projects yet.',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('project-map')).not.toBeInTheDocument()
   })
 })

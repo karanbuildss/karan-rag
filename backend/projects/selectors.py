@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.db.models import Prefetch
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q, Sum
 from django.shortcuts import get_object_or_404
 from payments.models import Payment
 
@@ -171,5 +171,126 @@ def get_project_money_trail(project_id):
                 "completed_date": milestone.completed_date,
             }
             for milestone in project.milestones.all()
+        ],
+    }
+
+
+def get_project_discovery_summary(queryset):
+    """Return filter-aware, structured project discovery aggregates.
+
+    Financial totals intentionally exclude unknown values. Separate known and
+    unknown counts keep the API from presenting missing data as zero.
+    """
+    from documents.models import ProjectDocumentLink
+    from procurement.models import Tender
+
+    filtered_ids = queryset.order_by().values("pk")
+    projects = Project.objects.filter(pk__in=filtered_ids).annotate(
+        has_evidence=Exists(ProjectDocumentLink.objects.filter(project_id=OuterRef("pk"))),
+        has_procurement=Exists(Tender.objects.filter(project_id=OuterRef("pk"))),
+        has_reported_payment=Exists(
+            Payment.objects.filter(contract_award__tender__project_id=OuterRef("pk"))
+        ),
+    )
+
+    totals = projects.aggregate(
+        project_count=Count("pk"),
+        known_allocation_count=Count(
+            "pk",
+            filter=Q(allocated_amount__isnull=False),
+        ),
+        allocated_total=Sum("allocated_amount"),
+        evidence_project_count=Count("pk", filter=Q(has_evidence=True)),
+        procurement_project_count=Count("pk", filter=Q(has_procurement=True)),
+        payment_reported_project_count=Count(
+            "pk",
+            filter=Q(has_reported_payment=True),
+        ),
+        geolocated_project_count=Count("pk", filter=Q(location__isnull=False)),
+    )
+    project_count = totals["project_count"] or 0
+    known_allocation_count = totals["known_allocation_count"] or 0
+
+    fiscal_year_rows = (
+        Project.objects.filter(pk__in=filtered_ids)
+        .values(
+            "fiscal_year__code",
+            "fiscal_year__year_bs",
+            "fiscal_year__year_ad",
+        )
+        .annotate(
+            project_count=Count("pk"),
+            known_allocation_count=Count(
+                "pk",
+                filter=Q(allocated_amount__isnull=False),
+            ),
+            allocated_total=Sum("allocated_amount"),
+        )
+        .order_by("-fiscal_year__code")
+    )
+    sector_rows = (
+        Project.objects.filter(pk__in=filtered_ids)
+        .values(
+            "subsector__sector__code",
+            "subsector__sector__name_en",
+            "subsector__sector__name_np",
+        )
+        .annotate(
+            project_count=Count("pk"),
+            known_allocation_count=Count(
+                "pk",
+                filter=Q(allocated_amount__isnull=False),
+            ),
+            allocated_total=Sum("allocated_amount"),
+        )
+        .order_by("subsector__sector__name_en")
+    )
+    status_rows = (
+        Project.objects.filter(pk__in=filtered_ids)
+        .values("status")
+        .annotate(project_count=Count("pk"))
+        .order_by("status")
+    )
+
+    return {
+        "totals": {
+            "project_count": project_count,
+            "known_allocation_count": known_allocation_count,
+            "unknown_allocation_count": project_count - known_allocation_count,
+            "allocated_total": _money(totals["allocated_total"]),
+            "evidence_project_count": totals["evidence_project_count"] or 0,
+            "procurement_project_count": totals["procurement_project_count"] or 0,
+            "payment_reported_project_count": (totals["payment_reported_project_count"] or 0),
+            "geolocated_project_count": totals["geolocated_project_count"] or 0,
+            "currency": "NPR",
+        },
+        "by_fiscal_year": [
+            {
+                "code": row["fiscal_year__code"],
+                "year_bs": row["fiscal_year__year_bs"],
+                "year_ad": row["fiscal_year__year_ad"],
+                "project_count": row["project_count"],
+                "known_allocation_count": row["known_allocation_count"],
+                "allocated_total": _money(row["allocated_total"]),
+            }
+            for row in fiscal_year_rows
+        ],
+        "by_sector": [
+            {
+                "code": row["subsector__sector__code"],
+                "name_en": row["subsector__sector__name_en"],
+                "name_np": row["subsector__sector__name_np"],
+                "project_count": row["project_count"],
+                "known_allocation_count": row["known_allocation_count"],
+                "allocated_total": _money(row["allocated_total"]),
+            }
+            for row in sector_rows
+        ],
+        "by_status": [
+            {
+                "status": row["status"],
+                "project_count": row["project_count"],
+            }
+            for row in status_rows
         ],
     }

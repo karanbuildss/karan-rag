@@ -1,4 +1,4 @@
-# Budget Darpan backend — Phase 1 public money-trail slice
+# Budget Darpan backend — pinned runtime and quality dependencies
 # Update this file as each tested vertical slice introduces a dependency.
 
 # Web/API

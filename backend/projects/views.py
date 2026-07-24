@@ -1,4 +1,5 @@
 from config.api import EnvelopeReadOnlyModelViewSet, success_response
+from django.db.models import Count
 from documents.models import ProjectDocumentLink
 from documents.serializers import ProjectDocumentLinkSerializer
 from drf_spectacular.utils import extend_schema
@@ -6,8 +7,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 
 from projects.models import Project
-from projects.selectors import get_project_money_trail
+from projects.selectors import get_project_discovery_summary, get_project_money_trail
 from projects.serializers import (
+    ProjectDiscoverySummaryResponseSerializer,
     ProjectMoneyTrailResponseSerializer,
     ProjectMoneyTrailSerializer,
     ProjectSerializer,
@@ -34,11 +36,17 @@ class ProjectViewSet(EnvelopeReadOnlyModelViewSet):
         "description_np",
         "local_government__name_en",
         "local_government__name_np",
+        "tenders__reference",
+        "tenders__invitation_number",
+        "tenders__title_en",
+        "tenders__title_np",
     ]
     ordering_fields = [
         "allocated_amount",
         "official_progress_percent",
         "planned_end_date",
+        "fiscal_year__code",
+        "code",
         "title_en",
     ]
     ordering = ["title_en"]
@@ -50,7 +58,16 @@ class ProjectViewSet(EnvelopeReadOnlyModelViewSet):
             "fiscal_year",
             "subsector__sector",
             "location",
+        ).annotate(
+            evidence_count=Count("document_links", distinct=True),
+            tender_count=Count("tenders", distinct=True),
         )
+
+    @extend_schema(responses=ProjectDiscoverySummaryResponseSerializer)
+    @action(detail=False, methods=["get"], url_path="discovery-summary")
+    def discovery_summary(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        return success_response(get_project_discovery_summary(queryset))
 
     @extend_schema(responses=ProjectMoneyTrailResponseSerializer)
     @action(detail=True, methods=["get"], url_path="money-trail")

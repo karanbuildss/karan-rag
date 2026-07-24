@@ -16,6 +16,31 @@ export async function getProjectMoneyTrail(projectId) {
   return response.data
 }
 
+export async function getProjects(params = {}) {
+  const response = await api.get('/projects/', { params })
+  return response.data
+}
+
+export async function getProjectDiscoverySummary(params = {}) {
+  const response = await api.get('/projects/discovery-summary/', { params })
+  return response.data
+}
+
+export async function getLocalGovernments(params = {}) {
+  const response = await api.get('/local-governments/', { params })
+  return response.data
+}
+
+export async function getFiscalYears(params = {}) {
+  const response = await api.get('/fiscal-years/', { params })
+  return response.data
+}
+
+export async function getSectors(params = {}) {
+  const response = await api.get('/sectors/', { params })
+  return response.data
+}
+
 export async function getProjectEvidence(projectId) {
   const response = await api.get(`/projects/${projectId}/evidence/`)
   return response.data

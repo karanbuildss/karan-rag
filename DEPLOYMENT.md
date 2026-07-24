@@ -49,6 +49,8 @@ DATABASE_URL=<PostgreSQL connection string>
 PUBLIC_API_BASE_URL=https://budget-darpan-api.onrender.com
 CORS_ALLOWED_ORIGINS=https://YOUR-FRONTEND.vercel.app
 CSRF_TRUSTED_ORIGINS=https://YOUR-FRONTEND.vercel.app
+SESSION_COOKIE_SAMESITE=None
+CSRF_COOKIE_SAMESITE=None
 MOCK_IDENTITY_SERVER_URL=https://budget-darpan-identity.onrender.com
 MOCK_IDENTITY_CLIENT_SECRET=<shared generated client secret>
 MOCK_IDENTITY_PUBLIC_KEY=<public.pem contents>
@@ -68,6 +70,8 @@ DEMO_OTP=<six-digit demonstration code>
 If Render changes either service name because the preferred name is unavailable, update `PUBLIC_API_BASE_URL` and `MOCK_IDENTITY_SERVER_URL` to the actual HTTPS URLs.
 
 The API start command runs migrations, idempotently seeds the documented showcase data, imports reviewed structured budget facts, evaluates anomaly rules, and starts Gunicorn. It does not ingest ignored private PDFs.
+
+The hosted API uses secure `SameSite=None` cookies because Vercel and Render have different origins. The mock identity service intentionally runs one worker because its short-lived demonstration challenges are stored in memory; this avoids a confirmation request reaching a different worker.
 
 Verify:
 

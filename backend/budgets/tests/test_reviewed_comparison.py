@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from documents.models import SourceDocument
 from geography.models import LocalGovernment
@@ -175,3 +175,43 @@ class ReviewedBudgetFactImportTests(TestCase):
         self.assertEqual(allocation.source_page, 1)
         self.assertEqual(allocation.review_status, "reviewed")
         self.assertEqual(allocation.spent_amount, Decimal("25.00"))
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+
+
+@override_settings(
+    EVIDENCE_MANIFEST=REPOSITORY_ROOT / "datasets" / "manifest.csv",
+    VERIFIED_BUDGET_FACTS=REPOSITORY_ROOT / "datasets" / "verified_budget_facts.csv",
+)
+class HostedEvidenceCatalogTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_demo_data", verbosity=0)
+        call_command("seed_hosted_evidence", verbosity=0)
+
+    def test_hosted_catalog_keeps_official_links_and_enables_reviewed_comparison(self):
+        client = APIClient()
+        response = client.get(
+            reverse("budget-allocation-comparison"),
+            {"fiscal_year": "2081-82"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.data["data"]
+        self.assertEqual(payload["evidence_summary"]["record_count"], 8)
+        self.assertEqual(payload["evidence_summary"]["municipality_count"], 3)
+        self.assertEqual(
+            {record["local_government_code"] for record in payload["records"]},
+            {"KMC", "HETAUDA", "RUPA"},
+        )
+        self.assertTrue(
+            all(
+                record["citation"]["source_url"].startswith("https://")
+                for record in payload["records"]
+            )
+        )
+        self.assertGreater(
+            SourceDocument.objects.filter(data_classification="official").count(),
+            10,
+        )

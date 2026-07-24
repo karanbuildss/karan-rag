@@ -127,7 +127,7 @@ class MoneyTrailApiTests(TestCase):
         call_command("seed_demo_data", verbosity=0)
 
         self.assertEqual(Project.objects.filter(pk=DEMO_PROJECT_ID).count(), 1)
-        self.assertEqual(Project.objects.count(), 9)
+        self.assertEqual(Project.objects.count(), 14)
         self.assertEqual(ProjectEvidenceEvent.objects.count(), 14)
         self.assertEqual(Tender.objects.count(), 4)
         self.assertEqual(ContractAward.objects.count(), 1)

@@ -37,13 +37,32 @@ class ProjectDiscoveryApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         totals = response.data["data"]["totals"]
-        self.assertEqual(totals["project_count"], 9)
-        self.assertEqual(totals["known_allocation_count"], 7)
+        self.assertEqual(totals["project_count"], 14)
+        self.assertEqual(totals["known_allocation_count"], 12)
         self.assertEqual(totals["unknown_allocation_count"], 2)
-        self.assertEqual(totals["allocated_total"], "11950000.00")
+        self.assertEqual(totals["allocated_total"], "63000000.00")
         self.assertEqual(totals["procurement_project_count"], 4)
         self.assertEqual(totals["payment_reported_project_count"], 1)
-        self.assertEqual(totals["geolocated_project_count"], 1)
+        self.assertEqual(totals["geolocated_project_count"], 6)
+
+    def test_every_sourced_municipality_has_a_visibly_synthetic_map_demo(self):
+        for municipality in ("KMC", "HETAUDA", "RUPA"):
+            response = self.client.get(
+                reverse("project-list"),
+                {
+                    "local_government__code": municipality,
+                    "data_classification": "synthetic_demo",
+                },
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertGreater(response.data["meta"]["pagination"]["count"], 0)
+            self.assertTrue(all(item["location"] for item in response.data["data"]))
+            self.assertTrue(
+                all(
+                    "synthetic" in item["data_note_en"].casefold() for item in response.data["data"]
+                )
+            )
 
     def test_rupa_filter_returns_five_official_allocated_projects(self):
         response = self.client.get(

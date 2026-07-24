@@ -85,7 +85,7 @@ def _choice(row, key, choices, row_number):
 
 
 @transaction.atomic
-def import_reviewed_budget_facts(facts_path):
+def import_reviewed_budget_facts(facts_path, *, catalog_documents=None):
     facts_path = Path(facts_path).resolve()
     if not facts_path.is_file():
         raise ReviewedBudgetFactImportError(f"Reviewed-facts file not found: {facts_path}")
@@ -101,16 +101,24 @@ def import_reviewed_budget_facts(facts_path):
             )
 
         for row_number, row in enumerate(reader, start=2):
-            source_file = _resolve_source_file(
-                dataset_root,
-                _cell(row, "source_relative_path"),
-                row_number,
-            )
-            document = SourceDocument.objects.filter(sha256=_sha256(source_file)).first()
-            if document is None:
-                raise ReviewedBudgetFactImportError(
-                    f"Register source evidence before importing reviewed-fact row {row_number}."
+            relative_path = _cell(row, "source_relative_path")
+            if catalog_documents is not None:
+                document = catalog_documents.get(relative_path)
+                if document is None:
+                    raise ReviewedBudgetFactImportError(
+                        f"Source metadata is not registered on reviewed-fact row {row_number}."
+                    )
+            else:
+                source_file = _resolve_source_file(
+                    dataset_root,
+                    relative_path,
+                    row_number,
                 )
+                document = SourceDocument.objects.filter(sha256=_sha256(source_file)).first()
+                if document is None:
+                    raise ReviewedBudgetFactImportError(
+                        f"Register source evidence before importing reviewed-fact row {row_number}."
+                    )
             try:
                 local_government = LocalGovernment.objects.get(
                     code=_cell(row, "local_government_code")

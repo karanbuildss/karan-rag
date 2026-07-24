@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+
+const projectPalette = ['#177e68', '#2774b8', '#e06c4f', '#8b5bb5', '#d99124', '#2f9da6']
 
 export default function ProjectComparisonChart({ formatMoney, projects }) {
   const { i18n, t } = useTranslation()
@@ -31,7 +33,11 @@ export default function ProjectComparisonChart({ formatMoney, projects }) {
               <XAxis angle={-12} dataKey="code" height={60} interval={0} textAnchor="end" tick={{ fill: '#5f6c69', fontSize: 11 }} />
               <YAxis tick={{ fill: '#5f6c69', fontSize: 11 }} tickFormatter={(value) => `${Math.round(value / 100000) / 10}m`} />
               <Tooltip formatter={(value) => formatMoney(value)} />
-              <Bar dataKey="allocated" fill="#196a60" radius={[5, 5, 0, 0]} />
+              <Bar dataKey="allocated" radius={[5, 5, 0, 0]}>
+                {chartData.map((entry, index) => (
+                  <Cell fill={projectPalette[index % projectPalette.length]} key={entry.code} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

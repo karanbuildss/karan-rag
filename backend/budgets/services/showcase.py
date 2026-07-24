@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
-from uuid import UUID
+from uuid import NAMESPACE_URL, UUID, uuid5
 from zoneinfo import ZoneInfo
 
 from config.models import DataClassification
@@ -18,6 +18,74 @@ SHOWCASE_SOURCE_URL = (
     f"{settings.PUBLIC_API_BASE_URL}/api/v1/documents/{SHOWCASE_DOCUMENT_ID}/file/"
 )
 NEPAL_TIMEZONE = ZoneInfo("Asia/Kathmandu")
+
+CITY_SHOWCASE_ROWS = [
+    {
+        "code": "DEMO-KMC-W16-DRAINAGE-2081-82",
+        "municipality": "KMC",
+        "ward": 16,
+        "subsector": "road",
+        "title_en": "Ward 16 Riverside Drainage Upgrade (Synthetic)",
+        "title_np": "वडा १६ नदीकिनार ढल सुधार (कृत्रिम)",
+        "amount": "18500000.00",
+        "progress": "68.00",
+        "status": Project.Status.IMPLEMENTATION,
+        "latitude": "27.724600",
+        "longitude": "85.298600",
+    },
+    {
+        "code": "DEMO-KMC-W05-HEALTH-2081-82",
+        "municipality": "KMC",
+        "ward": 5,
+        "subsector": "building",
+        "title_en": "Ward 5 Community Health Centre Retrofit (Synthetic)",
+        "title_np": "वडा ५ सामुदायिक स्वास्थ्य केन्द्र सुधार (कृत्रिम)",
+        "amount": "12000000.00",
+        "progress": "100.00",
+        "status": Project.Status.COMPLETED,
+        "latitude": "27.728300",
+        "longitude": "85.340000",
+    },
+    {
+        "code": "DEMO-HETAUDA-W04-FOOTPATH-2081-82",
+        "municipality": "HETAUDA",
+        "ward": 4,
+        "subsector": "road",
+        "title_en": "Ward 4 Urban Footpath and Drainage (Synthetic)",
+        "title_np": "वडा ४ सहरी फुटपाथ तथा ढल (कृत्रिम)",
+        "amount": "9800000.00",
+        "progress": "45.00",
+        "status": Project.Status.IMPLEMENTATION,
+        "latitude": "27.429000",
+        "longitude": "85.029700",
+    },
+    {
+        "code": "DEMO-HETAUDA-W10-MARKET-2081-82",
+        "municipality": "HETAUDA",
+        "ward": 10,
+        "subsector": "building",
+        "title_en": "Ward 10 Public Market Accessibility Upgrade (Synthetic)",
+        "title_np": "वडा १० सार्वजनिक बजार पहुँच सुधार (कृत्रिम)",
+        "amount": "7250000.00",
+        "progress": "82.00",
+        "status": Project.Status.IMPLEMENTATION,
+        "latitude": "27.406000",
+        "longitude": "85.028000",
+    },
+    {
+        "code": "DEMO-RUPA-W02-WATERSHED-2081-82",
+        "municipality": "RUPA",
+        "ward": 2,
+        "subsector": "bridge",
+        "title_en": "Ward 2 Watershed Trail and Culvert Showcase (Synthetic)",
+        "title_np": "वडा २ जलाधार बाटो तथा कल्भर्ट प्रदर्शन (कृत्रिम)",
+        "amount": "3500000.00",
+        "progress": "35.00",
+        "status": Project.Status.IMPLEMENTATION,
+        "latitude": "28.160000",
+        "longitude": "84.112000",
+    },
+]
 
 
 SHOWCASE_PAGES = {
@@ -281,3 +349,142 @@ def seed_synthetic_showcase(*, local_government, ward, fiscal_year, subsector):
         link.save()
 
     return project
+
+
+def seed_city_showcase_projects(*, local_governments, fiscal_year, subsectors):
+    """Add a small, explicit synthetic portfolio so every sourced city has a demo path."""
+    grouped = {}
+    for row in CITY_SHOWCASE_ROWS:
+        grouped.setdefault(row["municipality"], []).append(row)
+
+    projects = []
+    for municipality_code, rows in grouped.items():
+        local_government = local_governments[municipality_code]
+        document_id = uuid5(
+            NAMESPACE_URL,
+            f"budget-darpan:synthetic-city-portfolio:{municipality_code}:2081-82",
+        )
+        document, _ = SourceDocument.objects.update_or_create(
+            id=document_id,
+            defaults={
+                "title_en": f"{local_government.name_en} Project Map Showcase (Synthetic)",
+                "title_np": f"{local_government.name_np} आयोजना नक्सा प्रदर्शन (कृत्रिम)",
+                "document_type": SourceDocument.DocumentType.OTHER,
+                "local_government": local_government,
+                "fiscal_year": fiscal_year,
+                "language": SourceDocument.Language.MIXED,
+                "file_format": SourceDocument.FileFormat.PDF,
+                "original_filename": f"{municipality_code.lower()}-synthetic-map-showcase.pdf",
+                "sha256": "",
+                "source_url": (
+                    f"{settings.PUBLIC_API_BASE_URL}/api/v1/documents/{document_id}/file/"
+                ),
+                "source_url_kind": SourceDocument.SourceUrlKind.DIRECT_PDF,
+                "source_note": (
+                    "Synthetic city portfolio for interface and map demonstration. It is not "
+                    "an official project register."
+                ),
+                "data_classification": DataClassification.SYNTHETIC_DEMO,
+                "processing_status": SourceDocument.ProcessingStatus.APPROVED,
+                "page_count": len(rows),
+                "extracted_at": timezone.now(),
+            },
+        )
+        document.full_clean()
+        document.save()
+
+        for page_number, row in enumerate(rows, start=1):
+            ward, _ = local_government.wards.update_or_create(
+                number=row["ward"],
+                defaults={
+                    "name_en": f"Ward {row['ward']}",
+                    "name_np": f"वडा नं. {row['ward']}",
+                },
+            )
+            project_id = uuid5(NAMESPACE_URL, f"budget-darpan:{row['code']}")
+            project, _ = Project.objects.update_or_create(
+                id=project_id,
+                defaults={
+                    "code": row["code"],
+                    "local_government": local_government,
+                    "ward": ward,
+                    "fiscal_year": fiscal_year,
+                    "subsector": subsectors[row["subsector"]],
+                    "budget_allocation": None,
+                    "title_en": row["title_en"],
+                    "title_np": row["title_np"],
+                    "description_en": (
+                        "A realistic synthetic project used to demonstrate municipality "
+                        "comparison, project filtering, and budget-intensity mapping."
+                    ),
+                    "description_np": (
+                        "पालिका तुलना, आयोजना फिल्टर र बजेट घनत्व नक्सा देखाउन प्रयोग गरिएको "
+                        "यथार्थपरक कृत्रिम आयोजना।"
+                    ),
+                    "status": row["status"],
+                    "allocated_amount": Decimal(row["amount"]),
+                    "official_progress_percent": Decimal(row["progress"]),
+                    "data_classification": DataClassification.SYNTHETIC_DEMO,
+                    "data_note_en": (
+                        "Synthetic showcase values and approximate demo coordinates; not an "
+                        "official government project claim."
+                    ),
+                    "data_note_np": (
+                        "कृत्रिम प्रदर्शन रकम र अनुमानित डेमो निर्देशाङ्क; आधिकारिक सरकारी आयोजना दाबी होइन।"
+                    ),
+                    "source_url": document.source_url,
+                },
+            )
+            project.full_clean()
+            project.save()
+
+            location, _ = ProjectLocation.objects.update_or_create(
+                project=project,
+                defaults={
+                    "latitude": Decimal(row["latitude"]),
+                    "longitude": Decimal(row["longitude"]),
+                    "label_en": "Approximate synthetic showcase marker",
+                    "label_np": "अनुमानित कृत्रिम प्रदर्शन चिन्ह",
+                },
+            )
+            location.full_clean()
+            location.save()
+
+            text = (
+                f"Synthetic demonstration record for {row['title_en']}. Allocation NPR "
+                f"{Decimal(row['amount']):,.2f}; progress {row['progress']} percent. The values "
+                "and coordinates are fictional and exist only to demonstrate Budget Darpan."
+            )
+            page, _ = DocumentPage.objects.update_or_create(
+                document=document,
+                page_number=page_number,
+                defaults={
+                    "section": row["title_en"],
+                    "extracted_text": text,
+                    "extraction_method": DocumentPage.ExtractionMethod.EMBEDDED_TEXT,
+                    "text_quality_score": Decimal("1.0000"),
+                    "review_status": DocumentPage.ReviewStatus.APPROVED,
+                    "extraction_warnings": ["synthetic_demo_content"],
+                    "character_count": len(text),
+                },
+            )
+            page.full_clean()
+            page.save()
+
+            link, _ = ProjectDocumentLink.objects.update_or_create(
+                project=project,
+                document=document,
+                relationship=ProjectDocumentLink.Relationship.CONTEXT,
+                defaults={
+                    "page_from": page_number,
+                    "page_to": page_number,
+                    "section": row["title_en"],
+                    "evidence_note_en": "Explicitly synthetic demonstration evidence.",
+                    "evidence_note_np": "स्पष्ट रूपमा कृत्रिम प्रदर्शन प्रमाण।",
+                },
+            )
+            link.full_clean()
+            link.save()
+            projects.append(project)
+
+    return projects

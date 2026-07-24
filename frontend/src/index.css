@@ -396,6 +396,31 @@
     min-height: 25rem;
   }
 
+  .map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem 1rem;
+    margin-top: 0.8rem;
+    color: var(--color-muted);
+    font-size: 0.72rem;
+  }
+
+  .map-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .map-legend i {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 999px;
+  }
+
+  .map-legend small {
+    flex-basis: 100%;
+  }
+
   .empty-evidence {
     border: 1px dashed #aeb9b4;
     border-radius: 0.55rem;

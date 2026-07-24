@@ -10,13 +10,17 @@ vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="project-map">{children}</div>,
   Popup: ({ children }) => <div>{children}</div>,
   TileLayer: () => null,
+  useMap: () => ({ fitBounds: vi.fn() }),
 }))
 
 vi.mock('recharts', () => ({
   Bar: () => null,
   BarChart: ({ children }) => <div>{children}</div>,
   CartesianGrid: () => null,
+  Cell: () => null,
+  ComposedChart: ({ children }) => <div>{children}</div>,
   Legend: () => null,
+  Line: () => null,
   ResponsiveContainer: ({ children }) => <div>{children}</div>,
   Tooltip: () => null,
   XAxis: () => null,

@@ -97,9 +97,9 @@
         "description": "Known allocations are charted from the relational database. Unknown contract, payment, and progress values stay visibly unknown."
       },
       "map": {
-        "eyebrow": "Source-backed locations",
-        "title": "See projects with verified coordinates.",
-        "description": "Map markers appear only when a source-backed project location exists. Missing coordinates are shown as a data gap, never guessed."
+        "eyebrow": "Evidence-aware project geography",
+        "title": "See official locations and clearly labelled showcase coverage.",
+        "description": "Official and reconstructed markers require location evidence. Purple markers are visibly synthetic examples used to demonstrate future city-wide mapping."
       }
     },
     "evidenceBoundary": "Totals include only reported numeric values. Unknown amounts are counted separately and never converted to zero.",
@@ -176,9 +176,11 @@
     },
     "map": {
       "eyebrow": "Project geography",
-      "title": "Projects with reported coordinates",
-      "count": "{{count}} projects can be placed from available location evidence.",
-      "label": "Map of projects with source-backed coordinates",
+      "title": "Budget-intensity project map",
+      "count": "{{count}} projects have displayable coordinates; marker size represents known allocation.",
+      "label": "Budget-intensity map of projects with evidence classification",
+      "legend": "Map evidence legend",
+      "sizeNote": "Larger circles indicate larger known allocations; purple circles are synthetic showcase locations.",
       "emptyTitle": "No verified coordinates are available for these projects yet.",
       "emptyDescription": "The money trail and source evidence remain available. Add a government project location, engineering record, or other reliable coordinate source before placing a marker.",
       "safety": "Budget Darpan never estimates a project location from a citizen address or an unverified place-name match."
@@ -421,11 +423,14 @@
     "backToLibrary": "Back to source library",
     "eyebrow": "Public evidence catalogue",
     "title": "Government documents with page-level traceability",
-    "description": "Each original PDF is preserved, hashed, extracted page by page, and marked for review when OCR or text quality is uncertain.",
+    "description": "Official source metadata and links remain public in the hosted demo. Originals are preserved, hashed, and extracted page by page in the controlled research corpus.",
     "loading": "Loading source documents…",
     "error": "The source library could not be loaded.",
     "detailError": "This source document could not be loaded.",
     "empty": "No source documents are registered yet. Run the evidence ingestion command after seeding the database.",
+    "catalogued": "catalogued source records",
+    "officialSources": "official government sources",
+    "municipalities": "municipalities represented",
     "pages": "{{count}} pages",
     "landingPageWarning": "The manifest currently records an official listing page; the exact attachment URL still requires verification.",
     "inspect": "Inspect document",

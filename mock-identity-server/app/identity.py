@@ -22,8 +22,9 @@ def _identities():
 
 
 def _private_key():
-    if settings.IDENTITY_PRIVATE_KEY:
-        return settings.IDENTITY_PRIVATE_KEY
+    environment_key = getattr(settings, "IDENTITY_PRIVATE_KEY", "")
+    if environment_key:
+        return environment_key
     return settings.IDENTITY_PRIVATE_KEY_PATH.read_text(encoding="utf-8")
 
 

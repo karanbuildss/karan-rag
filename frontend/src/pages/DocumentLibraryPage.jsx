@@ -11,6 +11,10 @@ export default function DocumentLibraryPage() {
   const [documents, setDocuments] = useState([])
   const [state, setState] = useState('loading')
   const isNepali = i18n.resolvedLanguage === 'np'
+  const officialCount = documents.filter(
+    (document) => document.data_classification === 'official',
+  ).length
+  const municipalityCount = new Set(documents.map((document) => document.local_government_code)).size
 
   useEffect(() => {
     let active = true
@@ -50,6 +54,22 @@ export default function DocumentLibraryPage() {
           {state === 'ready' && documents.length === 0 && (
             <p className="empty-evidence">{t('documents.empty')}</p>
           )}
+          {state === 'ready' && documents.length > 0 && (
+            <div className="mb-8 grid gap-4 sm:grid-cols-3">
+              <article className="summary-card">
+                <strong>{documents.length}</strong>
+                <span>{t('documents.catalogued')}</span>
+              </article>
+              <article className="summary-card">
+                <strong>{officialCount}</strong>
+                <span>{t('documents.officialSources')}</span>
+              </article>
+              <article className="summary-card">
+                <strong>{municipalityCount}</strong>
+                <span>{t('documents.municipalities')}</span>
+              </article>
+            </div>
+          )}
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {documents.map((document) => (
               <article className="document-card" key={document.id}>
@@ -59,6 +79,11 @@ export default function DocumentLibraryPage() {
                   </span>
                   <span className={`review-pill review-${document.processing_status}`}>
                     {t(`documents.status.${document.processing_status}`)}
+                  </span>
+                  <span className="review-pill">
+                    {document.data_classification === 'official'
+                      ? t('project.classification.official')
+                      : t('project.classification.syntheticDemo')}
                   </span>
                 </div>
                 <h2 className="mt-5 font-display text-xl font-bold text-forest">
@@ -73,6 +98,9 @@ export default function DocumentLibraryPage() {
                 {document.source_url_kind === 'landing_page' && (
                   <p className="source-warning mt-3">{t('documents.landingPageWarning')}</p>
                 )}
+                <p className="mt-3 line-clamp-3 text-xs leading-5 text-muted">
+                  {document.source_note}
+                </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link className="primary-action" to={`/documents/${document.id}`}>
                     {t('documents.inspect')}

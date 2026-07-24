@@ -12,7 +12,7 @@ from procurement.models import Contractor, Tender
 from projects.models import Project, ProjectEvidenceEvent
 
 from budgets.models import BudgetAllocation, FiscalYear, Sector, SubSector
-from budgets.services.showcase import seed_synthetic_showcase
+from budgets.services.showcase import seed_city_showcase_projects, seed_synthetic_showcase
 
 REAL_PROJECT_ID = UUID("6f3ef140-e6b9-4d6b-915f-74080c804208")
 FOLLOW_UP_PROJECT_ID = UUID("2fb7eb1c-8b5a-4df8-9737-5c2dbb5399c4")
@@ -83,7 +83,7 @@ class Command(BaseCommand):
                 "name_np": "मकवानपुर",
             },
         )
-        LocalGovernment.objects.update_or_create(
+        kathmandu_local_government, _ = LocalGovernment.objects.update_or_create(
             code="KMC",
             defaults={
                 "district": kathmandu_district,
@@ -92,7 +92,7 @@ class Command(BaseCommand):
                 "government_type": LocalGovernment.GovernmentType.METROPOLITAN,
             },
         )
-        LocalGovernment.objects.update_or_create(
+        hetauda_local_government, _ = LocalGovernment.objects.update_or_create(
             code="HETAUDA",
             defaults={
                 "district": makwanpur_district,
@@ -599,11 +599,21 @@ class Command(BaseCommand):
             fiscal_year=fiscal_years["2081-82"],
             subsector=subsector,
         )
+        city_showcase_projects = seed_city_showcase_projects(
+            local_governments={
+                "KMC": kathmandu_local_government,
+                "HETAUDA": hetauda_local_government,
+                "RUPA": rupa_local_government,
+            },
+            fiscal_year=fiscal_years["2081-82"],
+            subsectors=infrastructure_subsectors,
+        )
 
         self.stdout.write(
             self.style.SUCCESS(
                 f"Seeded {len(later_projects) + 1} Jalpa and "
                 f"{len(rupa_projects)} Rupa evidence-backed projects plus one explicitly "
-                "synthetic complete showcase."
+                f"synthetic complete showcase and {len(city_showcase_projects)} visibly "
+                "synthetic city-map projects."
             )
         )

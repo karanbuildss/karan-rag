@@ -317,7 +317,8 @@ The public discovery slice turns the existing project records into a judge-ready
 - `GET /api/v1/projects/discovery-summary/` applies the same filters as the project list and returns structured totals by fiscal year, sector, and status;
 - known allocation totals exclude missing values while separate known and unknown counts prevent absent data from silently becoming zero;
 - the project discovery API keeps reported and unknown project allocations separate, while `/compare` now uses the reviewed municipality evidence pipeline described in Phase 4B;
-- `/map` plots only source-backed coordinates and presents an evidence-gap state for the current Jalpa records rather than inventing locations;
+- `/map` uses budget-scaled, provenance-coloured bubbles: official/reconstructed locations require evidence, while purple synthetic markers are explicitly labelled city-coverage demonstrations;
+- Kathmandu and Hetauda each include two realistic synthetic project records, and Rupa includes one, so every sourced municipality has a filter, comparison, detail, and map demo without misrepresenting municipal totals as official project rows;
 - English and Nepali interfaces share one component system, loading/error/empty states, and keyboard-accessible filters;
 - navigation now leads from the landing page to discovery, comparison, map, documents, and the evidence-led project investigation.
 
@@ -334,7 +335,9 @@ http://localhost:5173/map
 
 No dependency or API key was added for this phase. The slice reuses Django filtering, relational aggregates, Recharts, Leaflet, and the existing bilingual frontend. The next real-data upgrades are verified project coordinates and additional award, payment, progress, and comparison-project records.
 
-Current verified gates: 43 backend tests in both Django and Pytest, 11 frontend tests, Ruff lint/format, frontend lint, production build, migration drift check, dependency integrity, and warning-free OpenAPI generation.
+The lightweight production seed registers 35 official source metadata records and 8 reviewed FY 2081/82 budget/spending facts for Kathmandu, Hetauda, and Rupa. Their official URLs and cited pages remain public on Render even though the large raw corpus stays outside Git. The local research workflow still preserves, hashes, extracts, and reviews the original files before RAG ingestion.
+
+Current release gates: 82 Django tests, 19 frontend tests, Ruff lint/format, frontend lint, production build, and migration drift check. A production-catalog test verifies 35 official source records, 8 reviewed cited facts, and three municipalities in the FY 2081/82 comparison.
 
 ## Phase 4 verification
 
@@ -463,7 +466,7 @@ It contains NPR 10,000,000 allocation, NPR 9,000,000 contract award, NPR 7,200,0
 
 Final connected behavior:
 
-- all 35 supplied official source files are preserved and open through an iframe-safe streaming endpoint; a synthetic source is generated only for the separately labelled showcase;
+- all 35 supplied official source files are preserved locally and open through an iframe-safe streaming endpoint; hosted deployment publishes their official metadata and source links without committing the raw corpus, while synthetic showcase PDFs are generated only for explicitly labelled demo records;
 - every registered source has at least a page-level extraction record, while low-confidence OCR remains in a protected review queue at `/admin-documents` and is excluded from retrieval until approved;
 - `index_project_evidence --all-projects` creates project-filtered page chunks and embeddings in Chroma using `nomic-embed-text-v2-moe`; Pinecone remains optional and is not required locally;
 - the investigator routes questions, reads exact monetary values from relational data, retrieves accepted evidence, optionally composes with `qwen2.5:3b`, answers in English/Nepali/Romanized Nepali, returns citations, and renders financial and payment-versus-progress graphs;

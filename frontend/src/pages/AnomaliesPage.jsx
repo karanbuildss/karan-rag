@@ -45,6 +45,9 @@ export default function AnomaliesPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`anomaly-severity anomaly-${flag.severity}`}>{t(`anomalies.severity.${flag.severity}`)}</span>
                   <span className="review-pill">{t(`anomalies.reliability.${flag.reliability}`)}</span>
+                  {flag.project_data_classification === 'synthetic_demo' && (
+                    <span className="classification-pill">{t('project.classification.syntheticDemo')}</span>
+                  )}
                   <span className="text-xs font-bold text-muted">{flag.rule_id}</span>
                 </div>
                 <h2 className="mt-5 font-display text-2xl font-bold text-forest">{flag[isNepali ? 'title_np' : 'title_en']}</h2>

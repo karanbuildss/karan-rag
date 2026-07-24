@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 
 import DiscoveryFilters from '../components/DiscoveryFilters'
 import DiscoverySummary from '../components/DiscoverySummary'
+import MunicipalityEvidenceSummary from '../components/MunicipalityEvidenceSummary'
 import ProjectComparisonChart from '../components/ProjectComparisonChart'
 import ProjectDiscoveryCard from '../components/ProjectDiscoveryCard'
 import ProjectsMap from '../components/ProjectsMap'
@@ -19,10 +20,12 @@ const modes = [
 export default function ProjectDiscoveryPage({ mode = 'list' }) {
   const { i18n, t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { filters, options, projects, retry, state, summary } = useProjectDiscovery(searchParams)
+  const { budgetEvidence, filters, options, projects, retry, state, summary } =
+    useProjectDiscovery(searchParams)
   const isNepali = i18n.resolvedLanguage === 'np'
   const locale = isNepali ? 'ne-NP' : 'en-NP'
   const queryString = searchParams.toString()
+  const hasMunicipalityEvidence = Boolean(budgetEvidence?.records?.length)
 
   const formatMoney = (value) => {
     if (value === null || value === undefined) return t('project.unknown')
@@ -100,19 +103,45 @@ export default function ProjectDiscoveryPage({ mode = 'list' }) {
 
             {state === 'ready' && summary && (
               <>
-                <DiscoverySummary formatMoney={formatMoney} summary={summary} />
+                {projects.length > 0 || !hasMunicipalityEvidence ? (
+                  <DiscoverySummary formatMoney={formatMoney} summary={summary} />
+                ) : (
+                  <MunicipalityEvidenceSummary
+                    evidence={budgetEvidence}
+                    formatMoney={formatMoney}
+                  />
+                )}
 
                 <div className="mt-10 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <p className="eyebrow">{t('discovery.results.eyebrow')}</p>
+                    <p className="eyebrow">
+                      {t(
+                        hasMunicipalityEvidence && !projects.length
+                          ? 'discovery.municipalityEvidence.projectEyebrow'
+                          : 'discovery.results.eyebrow',
+                      )}
+                    </p>
                     <h2 className="mt-2 font-display text-3xl font-bold text-forest">
-                      {t('discovery.results.count', { count: projects.length })}
+                      {t(
+                        hasMunicipalityEvidence && !projects.length
+                          ? 'discovery.municipalityEvidence.projectTitle'
+                          : 'discovery.results.count',
+                        { count: projects.length },
+                      )}
                     </h2>
                   </div>
                   <p className="text-sm text-muted">{t('discovery.results.unknownReminder')}</p>
                 </div>
 
-                {!projects.length && <p className="empty-evidence mt-7">{t('discovery.empty')}</p>}
+                {!projects.length && (
+                  <p className="empty-evidence mt-7">
+                    {t(
+                      hasMunicipalityEvidence
+                        ? 'discovery.municipalityEvidence.projectBoundary'
+                        : 'discovery.empty',
+                    )}
+                  </p>
+                )}
 
                 {projects.length > 0 && mode === 'list' && (
                   <div className="mt-7 grid gap-5 lg:grid-cols-2">

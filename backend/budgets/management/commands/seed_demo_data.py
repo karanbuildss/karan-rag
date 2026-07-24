@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
-from uuid import UUID
+from uuid import NAMESPACE_URL, UUID, uuid5
 from zoneinfo import ZoneInfo
 
 from config.models import DataClassification
@@ -9,9 +9,10 @@ from django.db import transaction
 from geography.models import District, LocalGovernment, Province, Ward
 from payments.models import Payment
 from procurement.models import Contractor, Tender
-from projects.models import Project
+from projects.models import Project, ProjectEvidenceEvent
 
 from budgets.models import BudgetAllocation, FiscalYear, Sector, SubSector
+from budgets.services.showcase import seed_synthetic_showcase
 
 REAL_PROJECT_ID = UUID("6f3ef140-e6b9-4d6b-915f-74080c804208")
 FOLLOW_UP_PROJECT_ID = UUID("2fb7eb1c-8b5a-4df8-9737-5c2dbb5399c4")
@@ -21,6 +22,7 @@ DEMO_PROJECT_ID = REAL_PROJECT_ID
 
 POKHARA_BUDGET_SOURCE = "https://pokharamun.gov.np/budget-program?field_fiscal_year_tid=All"
 BOLPATRA_SOURCE = "https://bolpatra.gov.np/egp/searchOpportunity"
+RUPA_PROGRESS_SOURCE = "https://rupamun.gov.np/annual-progress-report"
 NEPAL_TIMEZONE = ZoneInfo("Asia/Kathmandu")
 
 
@@ -52,7 +54,7 @@ class Command(BaseCommand):
                 "government_type": LocalGovernment.GovernmentType.METROPOLITAN,
             },
         )
-        LocalGovernment.objects.update_or_create(
+        rupa_local_government, _ = LocalGovernment.objects.update_or_create(
             code="RUPA",
             defaults={
                 "district": district,
@@ -61,6 +63,45 @@ class Command(BaseCommand):
                 "government_type": LocalGovernment.GovernmentType.RURAL_MUNICIPALITY,
             },
         )
+        bagmati, _ = Province.objects.update_or_create(
+            code="P3",
+            defaults={"name_en": "Bagmati Province", "name_np": "बागमती प्रदेश"},
+        )
+        kathmandu_district, _ = District.objects.update_or_create(
+            code="KTM",
+            defaults={
+                "province": bagmati,
+                "name_en": "Kathmandu",
+                "name_np": "काठमाडौं",
+            },
+        )
+        makwanpur_district, _ = District.objects.update_or_create(
+            code="MKW",
+            defaults={
+                "province": bagmati,
+                "name_en": "Makwanpur",
+                "name_np": "मकवानपुर",
+            },
+        )
+        LocalGovernment.objects.update_or_create(
+            code="KMC",
+            defaults={
+                "district": kathmandu_district,
+                "name_en": "Kathmandu Metropolitan City",
+                "name_np": "काठमाडौं महानगरपालिका",
+                "government_type": LocalGovernment.GovernmentType.METROPOLITAN,
+            },
+        )
+        LocalGovernment.objects.update_or_create(
+            code="HETAUDA",
+            defaults={
+                "district": makwanpur_district,
+                "name_en": "Hetauda Sub-Metropolitan City",
+                "name_np": "हेटौंडा उपमहानगरपालिका",
+                "government_type": LocalGovernment.GovernmentType.SUB_METROPOLITAN,
+            },
+        )
+
         ward, _ = Ward.objects.update_or_create(
             local_government=local_government,
             number=8,
@@ -87,13 +128,41 @@ class Command(BaseCommand):
             )
         fiscal_year = fiscal_years["2077-78"]
 
-        sector, _ = Sector.objects.update_or_create(
-            code="INF",
-            defaults={
-                "name_en": "Infrastructure Development",
-                "name_np": "पूर्वाधार विकास",
-            },
-        )
+        sector_rows = [
+            (
+                "TOTAL",
+                "All Municipal Expenditure",
+                "सम्पूर्ण नगरपालिका खर्च",
+            ),
+            ("ECO", "Economic Development", "आर्थिक विकास"),
+            ("SOC", "Social Development", "सामाजिक विकास"),
+            ("INF", "Infrastructure Development", "पूर्वाधार विकास"),
+            (
+                "GOV",
+                "Good Governance and Interrelated Sectors",
+                "सुशासन तथा अन्तरसम्बन्धित क्षेत्र",
+            ),
+            (
+                "ADM",
+                "Office Operations and Administration",
+                "कार्यालय सञ्चालन तथा प्रशासनिक",
+            ),
+        ]
+        sectors = {}
+        for code, name_en, name_np in sector_rows:
+            sectors[code], _ = Sector.objects.update_or_create(
+                code=code,
+                defaults={"name_en": name_en, "name_np": name_np},
+            )
+            SubSector.objects.update_or_create(
+                code=f"{code}-ALL",
+                defaults={
+                    "sector": sectors[code],
+                    "name_en": f"{name_en} (reported total)",
+                    "name_np": f"{name_np} (प्रतिवेदित जम्मा)",
+                },
+            )
+        sector = sectors["INF"]
         subsector, _ = SubSector.objects.update_or_create(
             code="INF-ROAD",
             defaults={
@@ -102,6 +171,179 @@ class Command(BaseCommand):
                 "name_np": "सडक",
             },
         )
+
+        infrastructure_subsectors = {
+            "bridge": SubSector.objects.update_or_create(
+                code="INF-BRIDGE",
+                defaults={
+                    "sector": sector,
+                    "name_en": "Culverts and Bridges",
+                    "name_np": "कल्भर्ट तथा पुल",
+                },
+            )[0],
+            "building": SubSector.objects.update_or_create(
+                code="INF-BUILDING",
+                defaults={
+                    "sector": sector,
+                    "name_en": "Public Buildings",
+                    "name_np": "सार्वजनिक भवन",
+                },
+            )[0],
+            "tourism": SubSector.objects.update_or_create(
+                code="INF-TOURISM",
+                defaults={
+                    "sector": sector,
+                    "name_en": "Tourism Infrastructure",
+                    "name_np": "पर्यटन पूर्वाधार",
+                },
+            )[0],
+            "road": subsector,
+        }
+
+        rupa_ward, _ = Ward.objects.update_or_create(
+            local_government=rupa_local_government,
+            number=2,
+            defaults={"name_en": "Ward 2", "name_np": "वडा नं. २"},
+        )
+        rupa_projects = [
+            {
+                "code": "RUPA-W02-ANDHERI-CULVERT-2080-81",
+                "subsector": "bridge",
+                "title_en": "Andheri Khola Culvert Construction, Rupa-2",
+                "title_np": "अँधेरी खोला कल्भर्ट निर्माण रुपा-२",
+                "amount": "200000.00",
+                "dates_en": (
+                    "Agreement 2080/12/28; monitoring 2081/02/02; payment date 2081/02/03."
+                ),
+                "dates_np": ("सम्झौता २०८०/१२/२८; अनुगमन २०८१/०२/०२; भुक्तानी मिति २०८१/०२/०३।"),
+                "events": [
+                    (ProjectEvidenceEvent.EventType.AGREEMENT_RECORDED, "2080/12/28"),
+                    (ProjectEvidenceEvent.EventType.MONITORING_RECORDED, "2081/02/02"),
+                    (ProjectEvidenceEvent.EventType.PAYMENT_DATE_RECORDED, "2081/02/03"),
+                ],
+            },
+            {
+                "code": "RUPA-W02-DANDA-CHHAHARE-ROAD-2080-81",
+                "subsector": "road",
+                "title_en": "Danda Gaun–Chhahare Motor Road, Rupa-2",
+                "title_np": "डाँडा गाउँ–छहरे मोटरबाटो रुपा-२",
+                "amount": "200000.00",
+                "dates_en": "Monitoring and payment dates are both recorded as 2081/02/06.",
+                "dates_np": "अनुगमन र भुक्तानी मिति दुवै २०८१/०२/०६ उल्लेख छन्।",
+                "events": [
+                    (ProjectEvidenceEvent.EventType.MONITORING_RECORDED, "2081/02/06"),
+                    (ProjectEvidenceEvent.EventType.PAYMENT_DATE_RECORDED, "2081/02/06"),
+                ],
+            },
+            {
+                "code": "RUPA-W02-UJELI-KRIYAPUTRI-2080-81",
+                "subsector": "building",
+                "title_en": "Ujeli Andheri Kriyaputri Building",
+                "title_np": "उजेली अँधेरी क्रियापुत्री भवन",
+                "amount": "200000.00",
+                "dates_en": ("Agreement 2081/02/27; monitoring and payment dates 2081/03/23."),
+                "dates_np": "सम्झौता २०८१/०२/२७; अनुगमन र भुक्तानी मिति २०८१/०३/२३।",
+                "events": [
+                    (ProjectEvidenceEvent.EventType.AGREEMENT_RECORDED, "2081/02/27"),
+                    (ProjectEvidenceEvent.EventType.MONITORING_RECORDED, "2081/03/23"),
+                    (ProjectEvidenceEvent.EventType.PAYMENT_DATE_RECORDED, "2081/03/23"),
+                ],
+            },
+            {
+                "code": "RUPA-W02-DALIT-BUILDING-2080-81",
+                "subsector": "building",
+                "title_en": "Dalit Multipurpose Building",
+                "title_np": "दलित बहुउद्देश्यीय भवन",
+                "amount": "300000.00",
+                "dates_en": ("Agreement 2081/01/02; monitoring and payment dates 2081/03/24."),
+                "dates_np": "सम्झौता २०८१/०१/०२; अनुगमन र भुक्तानी मिति २०८१/०३/२४।",
+                "events": [
+                    (ProjectEvidenceEvent.EventType.AGREEMENT_RECORDED, "2081/01/02"),
+                    (ProjectEvidenceEvent.EventType.MONITORING_RECORDED, "2081/03/24"),
+                    (ProjectEvidenceEvent.EventType.PAYMENT_DATE_RECORDED, "2081/03/24"),
+                ],
+            },
+            {
+                "code": "RUPA-W02-MAJHKOT-TOURISM-2080-81",
+                "subsector": "tourism",
+                "title_en": "Majhkot Kot Bhairav Tourism Infrastructure Construction",
+                "title_np": "माझकोट कोट भैरव पर्यटन पूर्वाधार निर्माण",
+                "amount": "250000.00",
+                "dates_en": ("Agreement 2080/10/25; monitoring and payment dates 2081/01/03."),
+                "dates_np": "सम्झौता २०८०/१०/२५; अनुगमन र भुक्तानी मिति २०८१/०१/०३।",
+                "events": [
+                    (ProjectEvidenceEvent.EventType.AGREEMENT_RECORDED, "2080/10/25"),
+                    (ProjectEvidenceEvent.EventType.MONITORING_RECORDED, "2081/01/03"),
+                    (ProjectEvidenceEvent.EventType.PAYMENT_DATE_RECORDED, "2081/01/03"),
+                ],
+            },
+        ]
+        event_notes = {
+            ProjectEvidenceEvent.EventType.AGREEMENT_RECORDED: (
+                "The official implementation table records this agreement date.",
+                "आधिकारिक कार्यान्वयन तालिकामा यो सम्झौता मिति उल्लेख छ।",
+            ),
+            ProjectEvidenceEvent.EventType.MONITORING_RECORDED: (
+                "The official implementation table records this monitoring date.",
+                "आधिकारिक कार्यान्वयन तालिकामा यो अनुगमन मिति उल्लेख छ।",
+            ),
+            ProjectEvidenceEvent.EventType.PAYMENT_DATE_RECORDED: (
+                "The official table records a payment date but does not publish the amount.",
+                "आधिकारिक तालिकामा भुक्तानी मिति छ तर रकम प्रकाशित गरिएको छैन।",
+            ),
+        }
+        for row in rupa_projects:
+            rupa_project, _ = Project.objects.update_or_create(
+                id=uuid5(NAMESPACE_URL, f"budget-darpan:{row['code']}"),
+                defaults={
+                    "code": row["code"],
+                    "local_government": rupa_local_government,
+                    "ward": rupa_ward,
+                    "fiscal_year": fiscal_years["2080-81"],
+                    "subsector": infrastructure_subsectors[row["subsector"]],
+                    "budget_allocation": None,
+                    "title_en": row["title_en"],
+                    "title_np": row["title_np"],
+                    "description_en": (
+                        "Official Ward 2 project implementation row in the Rupa FY 2080/81 "
+                        "annual progress report."
+                    ),
+                    "description_np": (
+                        "रूपा गाउँपालिकाको आ.व. २०८०/८१ वार्षिक प्रगति प्रतिवेदनमा रहेको "
+                        "वडा नं. २ आयोजना कार्यान्वयन पङ्क्ति।"
+                    ),
+                    "status": Project.Status.IMPLEMENTATION,
+                    "allocated_amount": Decimal(row["amount"]),
+                    "official_progress_percent": None,
+                    "data_classification": DataClassification.OFFICIAL,
+                    "data_note_en": (
+                        f"{row['dates_en']} No tender, contract, payment amount, completion "
+                        "percentage, coordinates, or contractor is reported in the cited row."
+                    ),
+                    "data_note_np": (
+                        f"{row['dates_np']} उद्धृत पङ्क्तिमा बोलपत्र, ठेक्का, भुक्तानी रकम, "
+                        "सम्पन्न प्रतिशत, निर्देशाङ्क वा ठेकेदार उल्लेख छैन।"
+                    ),
+                    "source_url": RUPA_PROGRESS_SOURCE,
+                },
+            )
+            rupa_project.full_clean()
+            rupa_project.save()
+            ProjectEvidenceEvent.objects.filter(project=rupa_project).delete()
+            for event_type, date_bs in row["events"]:
+                note_en, note_np = event_notes[event_type]
+                event = ProjectEvidenceEvent(
+                    project=rupa_project,
+                    event_type=event_type,
+                    date_bs=date_bs,
+                    source_page=51,
+                    source_url=RUPA_PROGRESS_SOURCE,
+                    note_en=note_en,
+                    note_np=note_np,
+                    data_classification=DataClassification.OFFICIAL,
+                )
+                event.full_clean()
+                event.save()
 
         # The red book records NPR 400,000 from internal revenue and NPR 400,000
         # from public participation. Exact spending is not present in the source.
@@ -113,6 +355,18 @@ class Command(BaseCommand):
             defaults={
                 "allocated_amount": Decimal("800000.00"),
                 "spent_amount": None,
+                "review_status": BudgetAllocation.ReviewStatus.REVIEWED,
+                "reliability": BudgetAllocation.Reliability.MODERATE,
+                "comparability": BudgetAllocation.Comparability.LIMITED,
+                "source_page": 168,
+                "source_scope_en": (
+                    "Two FY 2077/78 red-book rows for the Ward 8 road entry, reported in "
+                    "NPR thousands and manually reconciled to NPR 800,000."
+                ),
+                "source_scope_np": (
+                    "आर्थिक वर्ष २०७७/७८ को रातो किताबमा वडा नं. ८ को सडक प्रविष्टिका दुई "
+                    "पङ्क्ति, रु. हजारमा प्रस्तुत र रु. ८,००,००० मा मानव समीक्षा गरिएको।"
+                ),
                 "data_classification": classification,
                 "source_url": POKHARA_BUDGET_SOURCE,
             },
@@ -339,6 +593,17 @@ class Command(BaseCommand):
             tender.full_clean()
             tender.save()
 
+        seed_synthetic_showcase(
+            local_government=local_government,
+            ward=ward,
+            fiscal_year=fiscal_years["2081-82"],
+            subsector=subsector,
+        )
+
         self.stdout.write(
-            self.style.SUCCESS(f"Seeded {len(later_projects) + 1} evidence-backed Jalpa projects.")
+            self.style.SUCCESS(
+                f"Seeded {len(later_projects) + 1} Jalpa and "
+                f"{len(rupa_projects)} Rupa evidence-backed projects plus one explicitly "
+                "synthetic complete showcase."
+            )
         )

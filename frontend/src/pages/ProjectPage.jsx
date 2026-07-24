@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { getProjectMoneyTrail } from '../api/client'
 import ProjectEvidence from '../components/ProjectEvidence'
+import ProjectEvidenceCoverage from '../components/ProjectEvidenceCoverage'
 import ProjectAccountability from '../components/ProjectAccountability'
 import ProjectInvestigator from '../components/ProjectInvestigator'
 import SiteFooter from '../components/SiteFooter'
@@ -67,8 +68,8 @@ export default function ProjectPage() {
     }
   }, [projectId, retryKey])
 
-  const formatMoney = (value) => {
-    if (value === null || value === undefined) return t('project.unknown')
+  const formatMoney = (value, fallback = t('project.unknown')) => {
+    if (value === null || value === undefined) return fallback
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'NPR',
@@ -144,6 +145,7 @@ export default function ProjectPage() {
     ? project.local_government.name_np
     : project.local_government.name_en
   const dataNote = isNepali ? project.data_note_np : project.data_note_en
+  const coverage = trail.evidence_coverage
   const classificationKey = {
     official: 'official',
     reconstructed_from_official_sources: 'reconstructed',
@@ -176,10 +178,15 @@ export default function ProjectPage() {
               </div>
               <div className="progress-panel">
                 <div className="flex items-end justify-between gap-4">
-                  <span className="text-sm font-bold text-muted">{t('project.officialProgress')}</span>
+                  <span className="text-sm font-bold text-muted">
+                    {project.official_progress_percent !== null
+                      ? t('project.officialProgress')
+                      : t('project.officialStatus')}
+                  </span>
                   <strong className="font-display text-3xl text-forest">
-                    {project.official_progress_percent ?? t('project.unknown')}
-                    {project.official_progress_percent !== null && '%'}
+                    {project.official_progress_percent !== null
+                      ? `${project.official_progress_percent}%`
+                      : t(`project.status.${project.status}`)}
                   </strong>
                 </div>
                 {project.official_progress_percent !== null && (
@@ -199,6 +206,11 @@ export default function ProjectPage() {
                     />
                   </div>
                 )}
+                {project.official_progress_percent === null && (
+                  <p className="mt-3 text-xs leading-5 text-muted">
+                    {t('project.progressNotPublished')}
+                  </p>
+                )}
                 <p className="mt-3 text-xs leading-5 text-muted">
                   {t('project.fiscalYear')} {project.fiscal_year.year_bs}
                 </p>
@@ -211,22 +223,38 @@ export default function ProjectPage() {
           <p className="eyebrow">{t('project.financialEyebrow')}</p>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <MoneyCard label={t('project.allocated')} value={formatMoney(summary.allocated_amount)} />
-            <MoneyCard label={t('project.contracted')} value={formatMoney(summary.contracted_amount)} />
+            <MoneyCard
+              label={t('project.contracted')}
+              value={formatMoney(summary.contracted_amount, t('project.notPublished'))}
+            />
             <MoneyCard
               label={t('project.reportedPaid')}
               note={t(`project.paymentStatus.${summary.payment_reporting_status}`)}
-              value={formatMoney(summary.reported_paid_amount)}
+              value={formatMoney(
+                summary.reported_paid_amount,
+                summary.payment_reporting_status === 'date_reported_amount_missing'
+                  ? t('project.amountNotPublished')
+                  : t('project.notPublished'),
+              )}
             />
             <MoneyCard
               label={t('project.reportedBalance')}
               note={t('project.reportedBalanceNote')}
-              value={formatMoney(summary.reported_contract_balance)}
+              value={formatMoney(
+                summary.reported_contract_balance,
+                t('project.cannotCalculate'),
+              )}
             />
           </div>
           <div className="data-notice mt-5">
             <span aria-hidden="true" className="text-amber">◆</span>
             <p>{dataNote}</p>
           </div>
+          <ProjectEvidenceCoverage
+            coverage={coverage}
+            formatMoney={formatMoney}
+            project={project}
+          />
           <div className="mt-8">
             <Suspense fallback={<p role="status">{t('common.loadingVisualization')}</p>}>
               <ProjectFinancialChart formatMoney={formatMoney} summary={summary} />

@@ -1,4 +1,5 @@
 from budgets.management.commands.seed_demo_data import DEMO_PROJECT_ID
+from budgets.services.showcase import SHOWCASE_PROJECT_ID
 from config.models import DataClassification
 from django.core.management import call_command
 from django.test import TestCase
@@ -101,3 +102,74 @@ class ExplainableAnomalyTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["meta"]["pagination"]["count"], 5)
+
+
+class RupaEvidenceGapRuleTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_demo_data", verbosity=0)
+        cls.project = Project.objects.get(code="RUPA-W02-ANDHERI-CULVERT-2080-81")
+        progress = SourceDocument.objects.create(
+            title_en="Rupa Rural Municipality Annual Progress Report 2080/81",
+            title_np="रूपा गाउँपालिका वार्षिक प्रगति प्रतिवेदन २०८०/८१",
+            document_type=SourceDocument.DocumentType.PROGRESS_REPORT,
+            local_government=cls.project.local_government,
+            fiscal_year=cls.project.fiscal_year,
+            language=SourceDocument.Language.NEPALI,
+            original_filename="rupa-progress.pdf",
+            source_url="https://rupamun.gov.np/annual-progress-report",
+            source_url_kind=SourceDocument.SourceUrlKind.LANDING_PAGE,
+            data_classification=DataClassification.OFFICIAL,
+            page_count=71,
+        )
+        ProjectDocumentLink.objects.create(
+            project=cls.project,
+            document=progress,
+            relationship=ProjectDocumentLink.Relationship.PROGRESS,
+            page_from=51,
+            page_to=51,
+            section="Ward 2 project implementation status",
+            evidence_note_en=(
+                "The official row records NPR 200000 allocated plus agreement, "
+                "monitoring, and payment dates."
+            ),
+        )
+
+    def test_dated_events_raise_specific_missing_evidence_rules(self):
+        flags = evaluate_project(self.project)
+        rule_ids = {flag.rule_id for flag in flags}
+
+        self.assertIn("AGREEMENT_DATE_CONTRACT_DETAILS_MISSING", rule_ids)
+        self.assertIn("PAYMENT_DATE_AMOUNT_MISSING", rule_ids)
+        self.assertIn("IMPLEMENTATION_PROGRESS_PERCENT_MISSING", rule_ids)
+        self.assertNotIn("EVIDENCE_PROGRESS_MISSING", rule_ids)
+        for flag in flags:
+            self.assertTrue(flag.source_references)
+            self.assertEqual(flag.source_references[0]["page"], 51)
+            combined = f"{flag.title_en} {flag.reason_en}".casefold()
+            self.assertNotIn("fraud", combined)
+            self.assertNotIn("corruption", combined)
+
+
+class SyntheticShowcaseAnomalyTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_demo_data", verbosity=0)
+        cls.project = Project.objects.get(pk=SHOWCASE_PROJECT_ID)
+
+    def test_payment_progress_mismatch_is_explainable_and_visibly_synthetic(self):
+        flags = evaluate_project(self.project)
+
+        mismatch = next(flag for flag in flags if flag.rule_id == "PAYMENT_PROGRESS_MISMATCH")
+        self.assertEqual(mismatch.severity, AnomalyFlag.Severity.MEDIUM)
+        self.assertEqual(
+            mismatch.calculated_values,
+            {
+                "payment_percent_of_contract": "80.00",
+                "payment_progress_gap_percentage_points": "22.00",
+            },
+        )
+        self.assertEqual(mismatch.data_used["data_classification"], "synthetic_demo")
+        self.assertEqual({source["page"] for source in mismatch.source_references}, {3, 4})
+        self.assertNotIn("fraud", mismatch.reason_en.casefold())
+        self.assertNotIn("corruption", mismatch.reason_en.casefold())

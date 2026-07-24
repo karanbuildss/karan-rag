@@ -1,5 +1,6 @@
 import csv
 from decimal import Decimal
+from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -7,6 +8,7 @@ from unittest.mock import patch
 import pymupdf
 from budgets.management.commands.seed_demo_data import DEMO_PROJECT_ID
 from budgets.models import FiscalYear
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
@@ -25,6 +27,8 @@ from documents.services import (
     import_evidence_manifest,
 )
 from documents.services.extraction import _image_from_page
+
+User = get_user_model()
 
 
 def make_text_pdf(text=""):
@@ -45,6 +49,12 @@ def make_multi_page_text_pdf(texts):
     payload = pdf.tobytes()
     pdf.close()
     return payload
+
+
+def make_png():
+    output = BytesIO()
+    Image.new("RGB", (20, 20), color="white").save(output, format="PNG")
+    return output.getvalue()
 
 
 class DocumentApiTests(TestCase):
@@ -96,6 +106,35 @@ class DocumentApiTests(TestCase):
         self.assertEqual(data["source_url"], self.document.source_url)
         self.assertEqual(data["review_status"], "review_required")
 
+    def test_preserved_file_endpoint_can_be_embedded_by_the_frontend(self):
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            document = SourceDocument.objects.create(
+                title_en="Embeddable source",
+                document_type=SourceDocument.DocumentType.OTHER,
+                local_government=LocalGovernment.objects.get(code="PKR"),
+                fiscal_year=FiscalYear.objects.get(code="2081-82"),
+                language=SourceDocument.Language.ENGLISH,
+                original_file=SimpleUploadedFile(
+                    "public-evidence.pdf",
+                    make_text_pdf("Public evidence file for the document viewer."),
+                    "application/pdf",
+                ),
+                original_filename="public-evidence.pdf",
+                sha256="f" * 64,
+                source_url="https://example.gov.np/public-evidence.pdf",
+            )
+
+            detail = self.client.get(reverse("source-document-detail", kwargs={"pk": document.pk}))
+            file_response = self.client.get(
+                reverse("source-document-file", kwargs={"pk": document.pk})
+            )
+
+            self.assertEqual(file_response.status_code, 200)
+            self.assertEqual(file_response["Content-Type"], "application/pdf")
+            self.assertNotIn("X-Frame-Options", file_response)
+            self.assertTrue(detail.json()["data"]["file_url"].endswith(f"/{document.pk}/file/"))
+            file_response.close()
+
     def test_project_evidence_returns_stable_citation_shape(self):
         ProjectDocumentLink.objects.create(
             project=Project.objects.get(pk=DEMO_PROJECT_ID),
@@ -116,6 +155,39 @@ class DocumentApiTests(TestCase):
             {"document_id", "document_title", "page", "section", "source_url"},
         )
         self.assertEqual(item["citation"]["page"], 1)
+
+    def test_review_queue_is_protected_and_operator_decision_is_audited(self):
+        denied = self.client.get(reverse("source-document-review-queue"))
+        self.assertEqual(denied.status_code, 403)
+
+        operator = User.objects.create_user(
+            username="document-reviewer",
+            password="safe-demo-password-123",
+            is_staff=True,
+        )
+        self.client.force_login(operator)
+        queue = self.client.get(reverse("source-document-review-queue"))
+        self.assertEqual(queue.status_code, 200)
+        self.assertTrue(
+            any(item["document_id"] == str(self.document.pk) for item in queue.data["data"])
+        )
+
+        reviewed = self.client.post(
+            reverse(
+                "source-document-review-page",
+                kwargs={"pk": self.document.pk, "page_number": 1},
+            ),
+            {"decision": "approved"},
+            format="json",
+        )
+        self.assertEqual(reviewed.status_code, 200)
+        self.page.refresh_from_db()
+        self.document.refresh_from_db()
+        self.assertEqual(self.page.review_status, DocumentPage.ReviewStatus.APPROVED)
+        self.assertEqual(self.document.processing_status, SourceDocument.ProcessingStatus.APPROVED)
+        self.assertTrue(
+            operator.budget_darpan_audit_logs.filter(action="document_page_reviewed").exists()
+        )
 
     def test_database_rejects_duplicate_page_number(self):
         with self.assertRaises(IntegrityError), transaction.atomic():
@@ -153,34 +225,88 @@ class DocumentApiTests(TestCase):
             with manifest.open("w", encoding="utf-8", newline="") as output:
                 writer = csv.DictWriter(output, fieldnames=fieldnames)
                 writer.writeheader()
+                row = {
+                    "relative_path": "audit.pdf",
+                    "title_en": "Linked audit",
+                    "title_np": "जोडिएको लेखापरीक्षण",
+                    "document_type": "audit_report",
+                    "local_government_code": "PKR",
+                    "fiscal_year_code": "2077-78",
+                    "language": "nep+eng",
+                    "source_url": "https://oag.gov.np/reports/local-level-report",
+                    "source_url_kind": "landing_page",
+                    "data_classification": "official",
+                    "project_code": "PKR-W08-JALPA-2077-78",
+                    "relationship": "audit",
+                    "page_from": "1",
+                    "page_to": "1",
+                    "section": "Unsettled advance",
+                    "evidence_note_en": "Official audit finding for review.",
+                }
+                writer.writerow(row)
                 writer.writerow(
                     {
-                        "relative_path": "audit.pdf",
-                        "title_en": "Linked audit",
-                        "title_np": "जोडिएको लेखापरीक्षण",
-                        "document_type": "audit_report",
-                        "local_government_code": "PKR",
-                        "fiscal_year_code": "2077-78",
-                        "language": "nep+eng",
-                        "source_url": "https://oag.gov.np/reports/local-level-report",
-                        "source_url_kind": "landing_page",
-                        "data_classification": "official",
-                        "project_code": "PKR-W08-JALPA-2077-78",
-                        "relationship": "audit",
-                        "page_from": "1",
-                        "page_to": "1",
-                        "section": "Unsettled advance",
-                        "evidence_note_en": "Official audit finding for review.",
+                        **row,
+                        "relationship": "context",
+                        "section": "Audit context",
+                        "evidence_note_en": "The same source also supplies context.",
                     }
                 )
 
             with override_settings(MEDIA_ROOT=media_root):
                 documents = import_evidence_manifest(manifest)
 
-            link = ProjectDocumentLink.objects.get(document=documents[0])
+            self.assertEqual(len(documents), 1)
+            self.assertEqual(ProjectDocumentLink.objects.filter(document=documents[0]).count(), 2)
+            link = ProjectDocumentLink.objects.get(
+                document=documents[0],
+                relationship=ProjectDocumentLink.Relationship.AUDIT,
+            )
             self.assertEqual(link.project_id, DEMO_PROJECT_ID)
             self.assertEqual(link.relationship, ProjectDocumentLink.Relationship.AUDIT)
             self.assertEqual(link.page_from, 1)
+
+    def test_manifest_registers_a_preserved_source_image_as_one_page(self):
+        fieldnames = [
+            "relative_path",
+            "title_en",
+            "title_np",
+            "document_type",
+            "local_government_code",
+            "fiscal_year_code",
+            "language",
+            "source_url",
+            "source_url_kind",
+            "data_classification",
+        ]
+        with TemporaryDirectory() as dataset_dir, TemporaryDirectory() as media_root:
+            dataset_root = Path(dataset_dir)
+            (dataset_root / "sector-summary.png").write_bytes(make_png())
+            manifest = dataset_root / "manifest.csv"
+            with manifest.open("w", encoding="utf-8", newline="") as output:
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerow(
+                    {
+                        "relative_path": "sector-summary.png",
+                        "title_en": "Signed sector expenditure statement",
+                        "title_np": "हस्ताक्षरित क्षेत्रगत खर्च विवरण",
+                        "document_type": "expenditure_report",
+                        "local_government_code": "KMC",
+                        "fiscal_year_code": "2081-82",
+                        "language": "nep",
+                        "source_url": "https://new.kathmandu.gov.np/official-source",
+                        "source_url_kind": "landing_page",
+                        "data_classification": "official",
+                    }
+                )
+
+            with override_settings(MEDIA_ROOT=media_root):
+                document = import_evidence_manifest(manifest)[0]
+
+        self.assertEqual(document.file_format, SourceDocument.FileFormat.IMAGE)
+        self.assertEqual(document.page_count, 1)
+        self.assertEqual(document.document_type, SourceDocument.DocumentType.EXPENDITURE_REPORT)
 
 
 class TextQualityTests(TestCase):

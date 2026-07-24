@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "accounts",
     "feedback",
     "anomalies",
+    "chat",
 ]
 
 MIDDLEWARE = [
@@ -164,6 +165,8 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "ENUM_NAME_OVERRIDES": {
+        "BudgetAllocationReviewStatusEnum": "budgets.models.BudgetAllocation.ReviewStatus",
+        "DocumentPageReviewStatusEnum": "documents.models.DocumentPage.ReviewStatus",
         "SourceDocumentLanguageEnum": "documents.models.SourceDocument.Language",
         "InvestigatorLanguageEnum": ("investigator.serializers.INVESTIGATOR_LANGUAGE_CHOICES"),
     },
@@ -179,6 +182,12 @@ TESSERACT_CMD = os.getenv("TESSERACT_CMD", "").strip()
 POPPLER_PATH = os.getenv("POPPLER_PATH", "").strip()
 EVIDENCE_MANIFEST = Path(
     os.getenv("EVIDENCE_MANIFEST", str(BASE_DIR.parent / "datasets" / "manifest.csv"))
+)
+VERIFIED_BUDGET_FACTS = Path(
+    os.getenv(
+        "VERIFIED_BUDGET_FACTS",
+        str(BASE_DIR.parent / "datasets" / "verified_budget_facts.csv"),
+    )
 )
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").strip()
@@ -202,6 +211,10 @@ RAG_CHUNK_TOKENS = int(os.getenv("RAG_CHUNK_TOKENS", "320"))
 RAG_CHUNK_OVERLAP_TOKENS = int(os.getenv("RAG_CHUNK_OVERLAP_TOKENS", "50"))
 
 VECTOR_DB_PROVIDER = os.getenv("VECTOR_DB_PROVIDER", "chroma").strip()
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "").strip()
+PINECONE_INDEX = os.getenv("PINECONE_INDEX", "budget-darpan").strip()
+PINECONE_NAMESPACE = os.getenv("PINECONE_NAMESPACE", "public-budget-documents").strip()
+PINECONE_FALLBACK_TO_CHROMA = env_bool("PINECONE_FALLBACK_TO_CHROMA", default=True)
 CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "budget-darpan-evidence").strip()
 chroma_db_dir = Path(os.getenv("CHROMA_DB_DIR", "../chroma_db"))
 CHROMA_DB_DIR = (

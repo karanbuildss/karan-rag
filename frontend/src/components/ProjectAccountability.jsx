@@ -6,6 +6,7 @@ import {
   createFeedback,
   getAnomalies,
   getCurrentAccount,
+  getFeedback,
   getFeedbackSummary,
   updateFeedback,
 } from '../api/client'
@@ -18,6 +19,15 @@ const initialForm = {
   comment: '',
   directly_observed: false,
 }
+
+const editableForm = (feedback) => ({
+  completion_rating: String(feedback.completion_rating),
+  quality_rating: String(feedback.quality_rating),
+  usefulness_rating: String(feedback.usefulness_rating),
+  allocation_fairness_rating: String(feedback.allocation_fairness_rating),
+  comment: feedback.comment || '',
+  directly_observed: Boolean(feedback.directly_observed),
+})
 
 function FeedbackSummary({ summary }) {
   const { t } = useTranslation()
@@ -64,10 +74,16 @@ export default function ProjectAccountability({ projectId }) {
   useEffect(() => {
     Promise.all([
       getCurrentAccount(),
+      getFeedback({ project: projectId, page_size: 100 }),
       getFeedbackSummary(projectId),
       getAnomalies({ project: projectId, status: 'active', page_size: 20 }),
-    ]).then(([accountResult, summaryResult, anomalyResult]) => {
+    ]).then(([accountResult, feedbackResult, summaryResult, anomalyResult]) => {
       setAccount(accountResult.data)
+      const owned = (feedbackResult.data || []).find((item) => item.can_edit)
+      if (owned) {
+        setExisting(owned)
+        setForm(editableForm(owned))
+      }
       setSummary(summaryResult.data)
       setFlags(anomalyResult.data || [])
     }).catch(() => {})
@@ -99,7 +115,7 @@ export default function ProjectAccountability({ projectId }) {
     } catch (error) {
       if (error.response?.status === 409 && error.response.data?.data) {
         setExisting(error.response.data.data)
-        setForm((current) => ({ ...current, ...error.response.data.data }))
+        setForm(editableForm(error.response.data.data))
         setSubmitState('duplicate')
       } else setSubmitState('error')
     }
@@ -132,8 +148,8 @@ export default function ProjectAccountability({ projectId }) {
           <div>
             <h3 className="font-display text-2xl font-bold text-forest">{t('feedback.title')}</h3>
             <div className="mt-5"><FeedbackSummary summary={summary} /></div>
-            {!account?.authenticated && <p className="empty-evidence mt-5"><Link className="back-link" to="/login">{t('feedback.login')}</Link></p>}
-            {account?.authenticated && !account.identity_verified && <p className="empty-evidence mt-5"><Link className="back-link" to="/verify">{t('feedback.verify')}</Link></p>}
+            {!account?.authenticated && <p className="empty-evidence mt-5"><Link className="back-link" to={`/login?returnTo=${encodeURIComponent(`/projects/${projectId}#accountability`)}`}>{t('feedback.login')}</Link></p>}
+            {account?.authenticated && !account.identity_verified && <p className="empty-evidence mt-5"><Link className="back-link" to={`/verify?returnTo=${encodeURIComponent(`/projects/${projectId}#accountability`)}`}>{t('feedback.verify')}</Link></p>}
             {account?.identity_verified && (
               <form className="account-card mt-5 space-y-4" onSubmit={submit}>
                 <div className="grid gap-4 sm:grid-cols-2">

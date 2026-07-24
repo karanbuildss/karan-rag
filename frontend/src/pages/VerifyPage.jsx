@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import {
   completeVerification,
@@ -13,6 +13,9 @@ import SiteHeader from '../components/SiteHeader'
 
 export default function VerifyPage() {
   const { t } = useTranslation()
+  const [searchParams] = useSearchParams()
+  const requestedReturn = searchParams.get('returnTo') || '/budgets'
+  const returnTo = requestedReturn.startsWith('/') && !requestedReturn.startsWith('//') ? requestedReturn : '/budgets'
   const [account, setAccount] = useState(null)
   const [stage, setStage] = useState('loading')
   const [identity, setIdentity] = useState({ phone: '', citizenship_number: '' })
@@ -39,8 +42,9 @@ export default function VerifyPage() {
       setChallenge(result.data)
       setOtp(result.data.demo_otp || '')
       setStage('otp')
-    } catch {
-      setError(true)
+    } catch (requestError) {
+      if (requestError.response?.data?.errors?.[0]?.code === 'identity_already_linked') setStage('identityLinked')
+      else setError(true)
     }
   }
 
@@ -66,11 +70,13 @@ export default function VerifyPage() {
           <h1 className="mt-4 font-display text-4xl font-bold text-forest">{t('verification.title')}</h1>
           <p className="mt-5 leading-7 text-muted">{t('verification.description')}</p>
           <p className="data-notice mt-6">{t('verification.mockBoundary')}</p>
+          <p className="data-notice mt-3">{t('verification.oneIdentityBoundary')}</p>
 
           <section className="account-card mt-8">
             {stage === 'loading' && <p role="status">{t('common.loading')}</p>}
             {stage === 'guest' && <p><Link className="primary-action" to="/login">{t('verification.loginFirst')}</Link></p>}
             {stage === 'error' && <p role="alert">{t('verification.serviceError')}</p>}
+            {stage === 'identityLinked' && <p className="source-warning" role="alert">{t('verification.identityLinked')}</p>}
             {stage === 'identity' && (
               <form className="space-y-5" onSubmit={start}>
                 <label className="filter-field">
@@ -102,7 +108,7 @@ export default function VerifyPage() {
                 <span className="review-pill review-approved">{t('verification.verified')}</span>
                 <h2 className="mt-5 font-display text-2xl font-bold text-forest">{t('verification.successTitle')}</h2>
                 <p className="mt-3 leading-7 text-muted">{t('verification.successDescription', { username: account?.username })}</p>
-                <Link className="primary-action mt-6" to="/budgets">{t('verification.browse')}</Link>
+                <Link className="primary-action mt-6" to={returnTo}>{t('verification.return')}</Link>
               </div>
             )}
           </section>

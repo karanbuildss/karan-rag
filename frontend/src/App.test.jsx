@@ -16,6 +16,7 @@ vi.mock('recharts', () => ({
   Bar: () => null,
   BarChart: ({ children }) => <div>{children}</div>,
   CartesianGrid: () => null,
+  Legend: () => null,
   ResponsiveContainer: ({ children }) => <div>{children}</div>,
   Tooltip: () => null,
   XAxis: () => null,
@@ -29,9 +30,12 @@ vi.mock('./api/client', () => ({
   createFeedback: vi.fn(),
   getDocument: vi.fn(),
   getDocumentPage: vi.fn(),
+  getDocumentReviewQueue: vi.fn(),
   getDocuments: vi.fn(),
+  getBudgetComparison: vi.fn(),
   getFiscalYears: vi.fn(),
   getFeedbackSummary: vi.fn(),
+  getFeedback: vi.fn(),
   getCurrentAccount: vi.fn(),
   getAnomalies: vi.fn(),
   getHealth: vi.fn(),
@@ -43,14 +47,18 @@ vi.mock('./api/client', () => ({
   getSectors: vi.fn(),
   loginAccount: vi.fn(),
   registerAccount: vi.fn(),
+  reviewDocumentPage: vi.fn(),
   startMockVerification: vi.fn(),
   updateFeedback: vi.fn(),
 }))
 
 import {
+  getBudgetComparison,
   getDocuments,
+  getDocumentReviewQueue,
   getFiscalYears,
   getFeedbackSummary,
+  getFeedback,
   getCurrentAccount,
   getAnomalies,
   getHealth,
@@ -195,6 +203,8 @@ describe('Budget Darpan foundation', () => {
         verified_local_residents: { count: 0, average_completion: null },
       },
     })
+    getFeedback.mockResolvedValue({ data: [] })
+    getDocumentReviewQueue.mockResolvedValue({ data: [] })
     getAnomalies.mockResolvedValue({ data: [] })
     getProjects.mockResolvedValue({ data: discoveryProjects })
     getProjectDiscoverySummary.mockResolvedValue(discoverySummary)
@@ -203,12 +213,82 @@ describe('Budget Darpan foundation', () => {
     })
     getFiscalYears.mockResolvedValue({
       data: [
+        {
+          code: '2081-82',
+          year_bs: '2081/82',
+          year_ad: '2024/25',
+          label_np: 'आर्थिक वर्ष २०८१/८२',
+        },
         { code: '2078-79', year_bs: '2078/79' },
         { code: '2077-78', year_bs: '2077/78' },
       ],
     })
     getSectors.mockResolvedValue({
       data: [{ code: 'infrastructure', name_en: 'Infrastructure', name_np: 'पूर्वाधार' }],
+    })
+    getBudgetComparison.mockResolvedValue({
+      data: {
+        fiscal_year: { code: '2081-82', year_bs: '2081/82', year_ad: '2024/25' },
+        currency: 'NPR',
+        records: [
+          {
+            id: 1,
+            local_government_code: 'KMC',
+            local_government_name_en: 'Kathmandu Metropolitan City',
+            local_government_name_np: 'काठमाडौं महानगरपालिका',
+            sector_code: 'INF',
+            sector_name_en: 'Infrastructure Development',
+            sector_name_np: 'पूर्वाधार विकास',
+            allocated_amount: '11393117282.00',
+            spent_amount: '5986032901.19',
+            utilization_percent: '52.54',
+            review_status: 'reviewed',
+            reliability: 'strong',
+            comparability: 'strong',
+            source_scope_en: 'Broad signed municipal sector total.',
+            source_scope_np: 'हस्ताक्षरित बृहत् नगर क्षेत्रगत जम्मा।',
+            data_classification: 'official',
+            citation: {
+              document_id: '00000000-0000-0000-0000-000000000010',
+              document_title: 'Kathmandu Sectoral Budget and Expenditure 2081/82',
+              page: 1,
+              source_url: 'https://new.kathmandu.gov.np/official-source',
+            },
+          },
+          {
+            id: 2,
+            local_government_code: 'HETAUDA',
+            local_government_name_en: 'Hetauda Sub-Metropolitan City',
+            local_government_name_np: 'हेटौंडा उपमहानगरपालिका',
+            sector_code: 'INF',
+            sector_name_en: 'Infrastructure Development',
+            sector_name_np: 'पूर्वाधार विकास',
+            allocated_amount: '774162667.00',
+            spent_amount: '275534521.00',
+            utilization_percent: '35.59',
+            review_status: 'reviewed',
+            reliability: 'strong',
+            comparability: 'limited',
+            source_scope_en: 'Narrower infrastructure programme total from progress page 23.',
+            source_scope_np: 'प्रगति पृष्ठ २३ को साँघुरो पूर्वाधार कार्यक्रम जम्मा।',
+            data_classification: 'official',
+            citation: {
+              document_id: '00000000-0000-0000-0000-000000000011',
+              document_title: 'Hetauda Annual Progress Review 2081/82',
+              page: 23,
+              source_url: 'https://hetaudamun.gov.np/official-source',
+            },
+          },
+        ],
+        evidence_summary: {
+          record_count: 2,
+          municipality_count: 2,
+          sector_count: 1,
+          reviewed_only: true,
+          note_en: 'Only reviewed values with page citations are included.',
+          note_np: 'पृष्ठ उद्धरण भएका समीक्षा गरिएका मान मात्र समावेश छन्।',
+        },
+      },
     })
   })
 
@@ -323,6 +403,96 @@ describe('Budget Darpan foundation', () => {
     expect(screen.queryByText(/synthetic demo figures/i)).not.toBeInTheDocument()
   })
 
+  it('distinguishes a Rupa payment date from an unpublished payment amount', async () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/projects/0ad85beb-fe04-59dc-8032-aa213d0236e8',
+    )
+    getProjectMoneyTrail.mockResolvedValue({
+      data: {
+        ...moneyTrail.data,
+        project: {
+          ...moneyTrail.data.project,
+          id: '0ad85beb-fe04-59dc-8032-aa213d0236e8',
+          code: 'RUPA-W02-ANDHERI-CULVERT-2080-81',
+          title_en: 'Andheri Khola Culvert Construction, Rupa-2',
+          description_en:
+            'Official Ward 2 project implementation row in the Rupa FY 2080/81 annual progress report.',
+          status: 'implementation',
+          data_classification: 'official',
+          data_note_en:
+            'Agreement 2080/12/28; monitoring 2081/02/02; payment date 2081/02/03. No payment amount or completion percentage is reported.',
+          source_url: 'https://rupamun.gov.np/annual-progress-report',
+          local_government: {
+            name_en: 'Rupa Rural Municipality',
+            name_np: 'रूपा गाउँपालिका',
+          },
+          ward_number: 2,
+          fiscal_year: { year_bs: '2080/81' },
+          subsector: { name_en: 'Culverts and Bridges', name_np: 'कल्भर्ट तथा पुल' },
+        },
+        financial_summary: {
+          allocated_amount: '200000.00',
+          contracted_amount: null,
+          reported_paid_amount: null,
+          reported_contract_balance: null,
+          payment_reporting_status: 'date_reported_amount_missing',
+        },
+        evidence_coverage: {
+          allocation: { status: 'amount_reported', amount: '200000.00' },
+          agreement: { status: 'date_reported', date_bs: '2080/12/28' },
+          monitoring: { status: 'date_reported', date_bs: '2081/02/02' },
+          procurement: { status: 'not_found' },
+          contract_award: { status: 'not_found' },
+          payment: {
+            status: 'date_reported_amount_missing',
+            date_bs: '2081/02/03',
+            amount: null,
+          },
+          physical_progress: {
+            status: 'status_reported_percentage_missing',
+            project_status: 'implementation',
+            percentage: null,
+          },
+        },
+        evidence_events: [],
+        procurement: [],
+        payments: [],
+        milestones: [],
+      },
+    })
+    render(<App />)
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Andheri Khola Culvert Construction, Rupa-2',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText('In implementation').length).toBeGreaterThan(0)
+    expect(
+      screen.getByText(/does not publish a numeric completion percentage/i),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Amount not published')).toBeInTheDocument()
+    expect(
+      screen.getByText(/official payment date is recorded, but the amount is not published/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        name: 'What is verified—and what record is still needed',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/records 2081\/02\/03 BS as the payment date/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Records needed to complete this money trail' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/missing contract or payment amount is not treated as zero/i),
+    ).toBeInTheDocument()
+  })
+
   it('does not turn an unknown procurement-only allocation into zero', async () => {
     window.history.replaceState(
       {},
@@ -396,7 +566,7 @@ describe('Budget Darpan foundation', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: 'Find the public project behind the budget line.',
+        name: 'Explore reviewed municipal money and the projects it can support.',
       }),
     ).toBeInTheDocument()
     expect(await screen.findByText('Jalpa Marg Ward 8 Road Works')).toBeInTheDocument()
@@ -404,6 +574,81 @@ describe('Budget Darpan foundation', () => {
     expect(screen.getByText('2 project records')).toBeInTheDocument()
     expect(screen.getByText('Unknown means not evidenced, not zero.')).toBeInTheDocument()
     expect(screen.getAllByText('Unknown').length).toBeGreaterThan(0)
+  })
+
+  it('shows reviewed municipality totals instead of dead-end zero cards', async () => {
+    window.history.replaceState({}, '', '/budgets?municipality=HETAUDA')
+    getProjects.mockResolvedValueOnce({ data: [] })
+    getProjectDiscoverySummary.mockResolvedValueOnce({
+      data: {
+        totals: {
+          project_count: 0,
+          known_allocation_count: 0,
+          unknown_allocation_count: 0,
+          allocated_total: null,
+          evidence_project_count: 0,
+          procurement_project_count: 0,
+          payment_reported_project_count: 0,
+          geolocated_project_count: 0,
+          currency: 'NPR',
+        },
+        by_fiscal_year: [],
+        by_sector: [],
+        by_status: [],
+      },
+    })
+    getBudgetComparison.mockResolvedValueOnce({
+      data: {
+        fiscal_year: { code: '2081-82', year_bs: '2081/82', year_ad: '2024/25' },
+        currency: 'NPR',
+        records: [
+          {
+            id: 8,
+            local_government_code: 'HETAUDA',
+            local_government_name_en: 'Hetauda Sub-Metropolitan City',
+            local_government_name_np: 'हेटौंडा उपमहानगरपालिका',
+            sector_code: 'INF',
+            sector_name_en: 'Infrastructure Development',
+            sector_name_np: 'पूर्वाधार विकास',
+            allocated_amount: '774162667.00',
+            spent_amount: '275534521.00',
+            utilization_percent: '35.59',
+            source_scope_en: 'Infrastructure programme total on PDF page 23.',
+            source_scope_np: 'PDF पृष्ठ २३ को पूर्वाधार कार्यक्रम जम्मा।',
+            citation: {
+              document_id: '00000000-0000-0000-0000-000000000012',
+              page: 23,
+            },
+          },
+        ],
+        evidence_summary: {
+          record_count: 1,
+          municipality_count: 1,
+          sector_count: 1,
+          reviewed_only: true,
+          note_en: 'Only reviewed values with page citations are included.',
+          note_np: 'पृष्ठ उद्धरण भएका समीक्षा गरिएका मान मात्र समावेश छन्।',
+        },
+      },
+    })
+
+    render(<App />)
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Official budget and reported spending are available',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('table')).toHaveTextContent('Infrastructure Development')
+    expect(screen.getByRole('table')).toHaveTextContent('35.59%')
+    expect(screen.getByRole('link', { name: 'Inspect source · page 23' })).toHaveAttribute(
+      'href',
+      '/documents/00000000-0000-0000-0000-000000000012?page=23',
+    )
+    expect(screen.getByText(/will not turn these municipality totals into fake projects/i))
+      .toBeInTheDocument()
+    expect(screen.queryByText('Known allocation total')).not.toBeInTheDocument()
+    expect(getBudgetComparison).toHaveBeenCalledWith({ municipality: 'HETAUDA' })
   })
 
   it('applies a shareable project search to list and summary requests', async () => {
@@ -426,14 +671,24 @@ describe('Budget Darpan foundation', () => {
     expect(window.location.search).toContain('search=45%2FPMC%2FNCB%2FW%2F077-78')
   })
 
-  it('renders comparison and honest empty-map states from the same filters', async () => {
-    window.history.replaceState({}, '', '/compare?fiscalYear=2077-78')
+  it('renders cited municipal comparison and an honest empty-map state', async () => {
+    window.history.replaceState({}, '', '/compare?fiscalYear=2081-82')
     const { unmount } = render(<App />)
 
-    expect(await screen.findByText('Known project allocations')).toBeInTheDocument()
-    expect(screen.getByRole('table')).toHaveTextContent('Jalpa Marg Ward 8 Road Works')
-    expect(getProjects).toHaveBeenCalledWith(
-      expect.objectContaining({ fiscal_year__code: '2077-78' }),
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Compare reported budget and spending without hiding evidence gaps.',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('table')).toHaveTextContent('Kathmandu Metropolitan City')
+    expect(screen.getByRole('table')).toHaveTextContent('Hetauda Sub-Metropolitan City')
+    expect(screen.getByText('Limited comparability')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Inspect source · page 23' })).toHaveAttribute(
+      'href',
+      '/documents/00000000-0000-0000-0000-000000000011?page=23',
+    )
+    expect(getBudgetComparison).toHaveBeenCalledWith(
+      expect.objectContaining({ fiscal_year: '2081-82' }),
     )
 
     unmount()
@@ -495,5 +750,17 @@ describe('Budget Darpan foundation', () => {
     expect(await screen.findByDisplayValue('123456')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Confirm verification' }))
     expect(await screen.findByText('Mock verification completed')).toBeInTheDocument()
+  })
+
+  it('protects the document review screen from public accounts', async () => {
+    window.history.replaceState({}, '', '/admin-documents')
+    getCurrentAccount.mockResolvedValue({ data: { authenticated: false } })
+    render(<App />)
+
+    expect(await screen.findByText(/authorized demo operator account/i)).toHaveAttribute(
+      'href',
+      '/login?returnTo=%2Fadmin-documents',
+    )
+    expect(getDocumentReviewQueue).not.toHaveBeenCalled()
   })
 })

@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 from documents.models import ProjectDocumentLink
-from projects.models import Project
+from projects.models import Project, ProjectEvidenceEvent
 
 from anomalies.models import AnomalyFlag
 
@@ -32,7 +32,79 @@ def _rule_payloads(project):
     payments = [payment for award in awards for payment in award.payments.all()]
     procurement_sources = _references(project, ProjectDocumentLink.Relationship.PROCUREMENT)
     audit_sources = _references(project, ProjectDocumentLink.Relationship.AUDIT)
+    progress_sources = _references(project, ProjectDocumentLink.Relationship.PROGRESS)
+    evidence_events = list(project.evidence_events.all())
+    events_by_type = {event.event_type: event for event in evidence_events}
+    agreement_event = events_by_type.get(ProjectEvidenceEvent.EventType.AGREEMENT_RECORDED)
+    monitoring_event = events_by_type.get(ProjectEvidenceEvent.EventType.MONITORING_RECORDED)
+    payment_date_event = events_by_type.get(ProjectEvidenceEvent.EventType.PAYMENT_DATE_RECORDED)
     payloads = []
+
+    if agreement_event and not awards:
+        payloads.append(
+            {
+                "rule_id": "AGREEMENT_DATE_CONTRACT_DETAILS_MISSING",
+                "severity": AnomalyFlag.Severity.LOW,
+                "reliability": AnomalyFlag.Reliability.OFFICIAL_REFERENCE,
+                "title_en": "Agreement date is recorded, but contract details are missing",
+                "title_np": "सम्झौता मिति अभिलेख छ तर सम्झौता विवरण उपलब्ध छैन",
+                "reason_en": f"The official progress source records an agreement date of {agreement_event.date_bs} BS, but no signed agreement, responsible-party record, or agreed amount is linked.",
+                "reason_np": f"आधिकारिक प्रगति स्रोतमा {agreement_event.date_bs} वि.सं. सम्झौता मिति छ तर हस्ताक्षरित सम्झौता, जिम्मेवार पक्ष वा सम्झौता रकम जोडिएको छैन।",
+                "data_used": {
+                    "agreement_date_bs": agreement_event.date_bs,
+                    "contract_award_count": len(awards),
+                },
+                "threshold": {
+                    "agreement_date_recorded": True,
+                    "contract_details_required": True,
+                },
+                "calculated_values": {},
+                "possible_explanations": [
+                    {
+                        "en": "The work may have used a consumer committee or another non-tender implementation method.",
+                        "np": "काम उपभोक्ता समिति वा अर्को गैर-बोलपत्र कार्यान्वयन विधिबाट भएको हुन सक्छ।",
+                    },
+                    {
+                        "en": "The signed agreement may exist but has not been published or collected.",
+                        "np": "हस्ताक्षरित सम्झौता हुन सक्छ तर प्रकाशित वा सङ्कलन गरिएको छैन।",
+                    },
+                ],
+                "recommendation_en": "Collect the signed agreement or award record and verify the implementation method, responsible party, and agreed amount.",
+                "recommendation_np": "हस्ताक्षरित सम्झौता वा ठेक्का प्रदान अभिलेख सङ्कलन गरी कार्यान्वयन विधि, जिम्मेवार पक्ष र सम्झौता रकम प्रमाणित गर्नुहोस्।",
+                "source_references": progress_sources,
+            }
+        )
+
+    if payment_date_event and not payments:
+        payloads.append(
+            {
+                "rule_id": "PAYMENT_DATE_AMOUNT_MISSING",
+                "severity": AnomalyFlag.Severity.LOW,
+                "reliability": AnomalyFlag.Reliability.OFFICIAL_REFERENCE,
+                "title_en": "Payment date is recorded, but the paid amount is missing",
+                "title_np": "भुक्तानी मिति अभिलेख छ तर भुक्तानी रकम उपलब्ध छैन",
+                "reason_en": f"The official progress source records {payment_date_event.date_bs} BS as the payment date, but no project-level payment amount or voucher is linked.",
+                "reason_np": f"आधिकारिक प्रगति स्रोतमा {payment_date_event.date_bs} वि.सं. भुक्तानी मिति छ तर आयोजना-स्तरको भुक्तानी रकम वा भौचर जोडिएको छैन।",
+                "data_used": {
+                    "payment_date_bs": payment_date_event.date_bs,
+                    "reported_payment_count": len(payments),
+                },
+                "threshold": {
+                    "payment_date_recorded": True,
+                    "payment_amount_required": True,
+                },
+                "calculated_values": {},
+                "possible_explanations": [
+                    {
+                        "en": "The amount may be held in a voucher or project-level accounting transaction that is not publicly linked.",
+                        "np": "रकम सार्वजनिक रूपमा नजोडिएको भौचर वा आयोजना-स्तरको लेखा कारोबारमा हुन सक्छ।",
+                    }
+                ],
+                "recommendation_en": "Collect the final payment voucher or project-level SuTRA transaction before reporting a paid amount.",
+                "recommendation_np": "भुक्तानी रकम रिपोर्ट गर्नुअघि अन्तिम भुक्तानी भौचर वा आयोजना-स्तरको SuTRA कारोबार सङ्कलन गर्नुहोस्।",
+                "source_references": progress_sources,
+            }
+        )
 
     if tenders and not awards:
         payloads.append(
@@ -92,7 +164,47 @@ def _rule_payloads(project):
             }
         )
 
-    if project.official_progress_percent is None and not project.milestones.exists():
+    if (
+        project.official_progress_percent is None
+        and not project.milestones.exists()
+        and (project.status != Project.Status.UNKNOWN or monitoring_event)
+    ):
+        payloads.append(
+            {
+                "rule_id": "IMPLEMENTATION_PROGRESS_PERCENT_MISSING",
+                "severity": AnomalyFlag.Severity.INFO,
+                "reliability": AnomalyFlag.Reliability.OFFICIAL_REFERENCE,
+                "title_en": "Implementation activity is recorded without numeric progress",
+                "title_np": "कार्यान्वयन गतिविधि अभिलेख छ तर सङ्ख्यात्मक प्रगति उपलब्ध छैन",
+                "reason_en": "The project is recorded as under implementation or monitored, but no physical-progress percentage, completed quantity, or milestone is linked.",
+                "reason_np": "आयोजना कार्यान्वयन वा अनुगमनमा रहेको अभिलेख छ तर भौतिक प्रगति प्रतिशत, सम्पन्न परिमाण वा उपलब्धि जोडिएको छैन।",
+                "data_used": {
+                    "project_status": project.status,
+                    "monitoring_date_bs": (monitoring_event.date_bs if monitoring_event else None),
+                    "official_progress": None,
+                    "milestone_count": 0,
+                },
+                "threshold": {
+                    "implementation_or_monitoring_recorded": True,
+                    "progress_measure_required": True,
+                },
+                "calculated_values": {},
+                "possible_explanations": [
+                    {
+                        "en": "The monitoring record may confirm a visit without publishing measured completion.",
+                        "np": "अनुगमन अभिलेखले स्थलगत भ्रमण पुष्टि गरे पनि नापिएको सम्पन्नता प्रकाशित नगरेको हुन सक्छ।",
+                    },
+                    {
+                        "en": "A measurement book or completion certificate may exist outside the collected dataset.",
+                        "np": "नापी किताब वा कार्यसम्पन्न प्रमाणपत्र सङ्कलित तथ्यबाहिर हुन सक्छ।",
+                    },
+                ],
+                "recommendation_en": "Collect a monitoring report, measurement book, or completion certificate with measured physical progress.",
+                "recommendation_np": "नापिएको भौतिक प्रगतिसहित अनुगमन प्रतिवेदन, नापी किताब वा कार्यसम्पन्न प्रमाणपत्र सङ्कलन गर्नुहोस्।",
+                "source_references": progress_sources,
+            }
+        )
+    elif project.official_progress_percent is None and not project.milestones.exists():
         payloads.append(
             {
                 "rule_id": "EVIDENCE_PROGRESS_MISSING",
@@ -114,6 +226,98 @@ def _rule_payloads(project):
                 "recommendation_en": "Collect an engineering progress report, measurement book, or completion certificate.",
                 "recommendation_np": "इन्जिनियरिङ प्रगति प्रतिवेदन, नापी किताब वा सम्पन्न प्रमाणपत्र सङ्कलन गर्नुहोस्।",
                 "source_references": [],
+            }
+        )
+
+    contracted_total = sum((award.contract_amount for award in awards), Decimal("0"))
+    paid_total = sum((payment.amount for payment in payments), Decimal("0"))
+    if contracted_total > 0 and payments and project.official_progress_percent is not None:
+        payment_percent = (paid_total / contracted_total * Decimal("100")).quantize(Decimal("0.01"))
+        progress_percent = Decimal(project.official_progress_percent)
+        percentage_point_gap = (payment_percent - progress_percent).quantize(Decimal("0.01"))
+        if percentage_point_gap >= Decimal("15.00"):
+            payloads.append(
+                {
+                    "rule_id": "PAYMENT_PROGRESS_MISMATCH",
+                    "severity": AnomalyFlag.Severity.MEDIUM,
+                    "reliability": (
+                        AnomalyFlag.Reliability.MODERATE
+                        if project.data_classification == "synthetic_demo"
+                        else AnomalyFlag.Reliability.STRONG
+                    ),
+                    "title_en": "Reported payments are ahead of physical progress",
+                    "title_np": "प्रतिवेदित भुक्तानी भौतिक प्रगतिभन्दा अगाडि छ",
+                    "reason_en": (
+                        f"Reported payments equal {payment_percent}% of the contract while "
+                        f"reported physical progress is {progress_percent}%, a "
+                        f"{percentage_point_gap} percentage-point gap."
+                    ),
+                    "reason_np": (
+                        f"प्रतिवेदित भुक्तानी ठेक्का रकमको {payment_percent}% छ तर भौतिक प्रगति "
+                        f"{progress_percent}% छ, अर्थात् {percentage_point_gap} प्रतिशत-बिन्दुको अन्तर।"
+                    ),
+                    "data_used": {
+                        "contract_amount": str(contracted_total),
+                        "reported_paid_amount": str(paid_total),
+                        "reported_progress_percent": str(progress_percent),
+                        "data_classification": project.data_classification,
+                    },
+                    "threshold": {"payment_ahead_of_progress_percentage_points_min": "15.00"},
+                    "calculated_values": {
+                        "payment_percent_of_contract": str(payment_percent),
+                        "payment_progress_gap_percentage_points": str(percentage_point_gap),
+                    },
+                    "possible_explanations": [
+                        {
+                            "en": "Mobilization payments or stored materials may be paid before equivalent visible physical progress.",
+                            "np": "परिचालन पेश्की वा भण्डारण गरिएको सामग्रीको भुक्तानी समान देखिने भौतिक प्रगतिभन्दा अघि भएको हुन सक्छ।",
+                        },
+                        {
+                            "en": "The progress report and payment ledger may use different reporting dates.",
+                            "np": "प्रगति प्रतिवेदन र भुक्तानी खाताले फरक प्रतिवेदन मिति प्रयोग गरेका हुन सक्छन्।",
+                        },
+                    ],
+                    "recommendation_en": "Compare the latest payment certificates with the measurement book and a same-date engineering progress report.",
+                    "recommendation_np": "पछिल्लो भुक्तानी प्रमाणपत्रलाई नापी किताब र सोही मितिको इन्जिनियरिङ प्रगति प्रतिवेदनसँग तुलना गर्नुहोस्।",
+                    "source_references": _references(
+                        project, ProjectDocumentLink.Relationship.PAYMENT
+                    )
+                    + progress_sources,
+                }
+            )
+
+    if contracted_total > 0 and paid_total > contracted_total:
+        excess = paid_total - contracted_total
+        payloads.append(
+            {
+                "rule_id": "PAYMENTS_EXCEED_CONTRACT",
+                "severity": AnomalyFlag.Severity.HIGH,
+                "reliability": AnomalyFlag.Reliability.STRONG,
+                "title_en": "Reported payments exceed the contract amount",
+                "title_np": "प्रतिवेदित भुक्तानी ठेक्का रकमभन्दा बढी छ",
+                "reason_en": (
+                    f"Reported payments total NPR {paid_total} against a contract amount of "
+                    f"NPR {contracted_total}."
+                ),
+                "reason_np": (
+                    f"प्रतिवेदित भुक्तानी जम्मा रु. {paid_total} छ भने ठेक्का रकम रु. {contracted_total} छ।"
+                ),
+                "data_used": {
+                    "contract_amount": str(contracted_total),
+                    "reported_paid_amount": str(paid_total),
+                },
+                "threshold": {"reported_paid_must_not_exceed_contract": True},
+                "calculated_values": {"amount_above_contract": str(excess)},
+                "possible_explanations": [
+                    {
+                        "en": "A contract variation may not yet be linked, or a payment may be duplicated or assigned to the wrong contract.",
+                        "np": "ठेक्का भेरिएसन अझै नजोडिएको, भुक्तानी दोहोरिएको वा गलत ठेक्कामा जोडिएको हुन सक्छ।",
+                    }
+                ],
+                "recommendation_en": "Verify contract variations and reconcile every payment reference before drawing a conclusion.",
+                "recommendation_np": "निष्कर्ष निकाल्नुअघि ठेक्का भेरिएसन जाँच गरी प्रत्येक भुक्तानी सन्दर्भ मिलान गर्नुहोस्।",
+                "source_references": _references(project, ProjectDocumentLink.Relationship.PAYMENT)
+                + procurement_sources,
             }
         )
 

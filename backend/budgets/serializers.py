@@ -58,4 +58,60 @@ class BudgetAllocationSerializer(serializers.ModelSerializer):
             "spent_amount",
             "data_classification",
             "source_url",
+            "source_document",
+            "source_page",
+            "review_status",
+            "reliability",
+            "comparability",
+            "source_scope_en",
+            "source_scope_np",
         ]
+
+
+class BudgetComparisonCitationSerializer(serializers.Serializer):
+    document_id = serializers.UUIDField()
+    document_title = serializers.CharField()
+    document_title_np = serializers.CharField(allow_blank=True)
+    page = serializers.IntegerField(min_value=1)
+    section = serializers.CharField()
+    source_url = serializers.URLField()
+
+
+class BudgetComparisonRowSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    local_government_code = serializers.CharField()
+    local_government_name_en = serializers.CharField()
+    local_government_name_np = serializers.CharField()
+    sector_code = serializers.CharField()
+    sector_name_en = serializers.CharField()
+    sector_name_np = serializers.CharField()
+    allocated_amount = serializers.DecimalField(max_digits=18, decimal_places=2)
+    spent_amount = serializers.DecimalField(max_digits=18, decimal_places=2)
+    utilization_percent = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        allow_null=True,
+    )
+    review_status = serializers.CharField()
+    reliability = serializers.CharField()
+    comparability = serializers.CharField()
+    source_scope_en = serializers.CharField()
+    source_scope_np = serializers.CharField()
+    data_classification = serializers.CharField()
+    citation = BudgetComparisonCitationSerializer()
+
+
+class BudgetComparisonEvidenceSummarySerializer(serializers.Serializer):
+    record_count = serializers.IntegerField()
+    municipality_count = serializers.IntegerField()
+    sector_count = serializers.IntegerField()
+    reviewed_only = serializers.BooleanField()
+    note_en = serializers.CharField()
+    note_np = serializers.CharField()
+
+
+class BudgetComparisonResponseSerializer(serializers.Serializer):
+    fiscal_year = FiscalYearSerializer(allow_null=True)
+    currency = serializers.CharField()
+    records = BudgetComparisonRowSerializer(many=True)
+    evidence_summary = BudgetComparisonEvidenceSummarySerializer()

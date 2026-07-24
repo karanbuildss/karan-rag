@@ -4,7 +4,7 @@ from django.db.models import Count, Exists, OuterRef, Prefetch, Q, Sum
 from django.shortcuts import get_object_or_404
 from payments.models import Payment
 
-from projects.models import Project, ProjectMilestone
+from projects.models import Project, ProjectEvidenceEvent, ProjectMilestone
 
 
 def _money(value):
@@ -22,6 +22,10 @@ def project_money_trail_queryset():
         "location",
     ).prefetch_related(
         Prefetch("milestones", queryset=ProjectMilestone.objects.order_by("sequence")),
+        Prefetch(
+            "evidence_events",
+            queryset=ProjectEvidenceEvent.objects.order_by("source_page", "event_type", "date_bs"),
+        ),
         "tenders__award__contractor",
         Prefetch("tenders__award__payments", queryset=payment_queryset),
     )
@@ -87,6 +91,20 @@ def get_project_money_trail(project_id):
     )
 
     location = getattr(project, "location", None)
+    evidence_events = list(project.evidence_events.all())
+    events_by_type = {}
+    for event in evidence_events:
+        events_by_type.setdefault(event.event_type, event)
+    agreement_event = events_by_type.get(ProjectEvidenceEvent.EventType.AGREEMENT_RECORDED)
+    monitoring_event = events_by_type.get(ProjectEvidenceEvent.EventType.MONITORING_RECORDED)
+    payment_date_event = events_by_type.get(ProjectEvidenceEvent.EventType.PAYMENT_DATE_RECORDED)
+    payment_reporting_status = (
+        "reported"
+        if payments
+        else "date_reported_amount_missing"
+        if payment_date_event
+        else "not_yet_reported"
+    )
     payment_items = [
         {
             "reference": payment.reference,
@@ -155,9 +173,60 @@ def get_project_money_trail(project_id):
             "contracted_amount": _money(contracted_amount),
             "reported_paid_amount": _money(reported_paid_amount),
             "reported_contract_balance": _money(reported_balance),
-            "payment_reporting_status": "reported" if payments else "not_yet_reported",
+            "payment_reporting_status": payment_reporting_status,
             "currency": "NPR",
         },
+        "evidence_coverage": {
+            "allocation": {
+                "status": (
+                    "amount_reported" if project.allocated_amount is not None else "not_found"
+                ),
+                "amount": _money(project.allocated_amount),
+            },
+            "agreement": {
+                "status": "date_reported" if agreement_event else "not_found",
+                "date_bs": agreement_event.date_bs if agreement_event else None,
+            },
+            "monitoring": {
+                "status": "date_reported" if monitoring_event else "not_found",
+                "date_bs": monitoring_event.date_bs if monitoring_event else None,
+            },
+            "procurement": {
+                "status": "notice_reported" if tenders else "not_found",
+            },
+            "contract_award": {
+                "status": "award_reported" if contract_amounts else "not_found",
+            },
+            "payment": {
+                "status": payment_reporting_status,
+                "date_bs": payment_date_event.date_bs if payment_date_event else None,
+                "amount": _money(reported_paid_amount),
+            },
+            "physical_progress": {
+                "status": (
+                    "percentage_reported"
+                    if project.official_progress_percent is not None
+                    else "status_reported_percentage_missing"
+                    if project.status != Project.Status.UNKNOWN
+                    else "not_found"
+                ),
+                "project_status": project.status,
+                "percentage": project.official_progress_percent,
+            },
+        },
+        "evidence_events": [
+            {
+                "event_type": event.event_type,
+                "date_bs": event.date_bs,
+                "date_ad": event.date_ad,
+                "source_page": event.source_page,
+                "source_url": event.source_url,
+                "note_en": event.note_en,
+                "note_np": event.note_np,
+                "data_classification": event.data_classification,
+            }
+            for event in evidence_events
+        ],
         "procurement": procurement_items,
         "payments": payment_items,
         "milestones": [

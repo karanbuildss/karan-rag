@@ -123,6 +123,8 @@ class ProjectDiscoverySummaryResponseSerializer(serializers.Serializer):
 class ProjectMoneyTrailSerializer(serializers.Serializer):
     project = serializers.DictField()
     financial_summary = serializers.DictField()
+    evidence_coverage = serializers.DictField()
+    evidence_events = serializers.ListField(child=serializers.DictField())
     procurement = serializers.ListField(child=serializers.DictField())
     payments = serializers.ListField(child=serializers.DictField())
     milestones = serializers.ListField(child=serializers.DictField())

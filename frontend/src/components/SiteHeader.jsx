@@ -35,6 +35,7 @@ export default function SiteHeader({ compact = false }) {
             <Link className="nav-link" to="/map">{t('navigation.map')}</Link>
             <Link className="nav-link" to="/anomalies">{t('navigation.anomalies')}</Link>
             <Link className="nav-link" to="/documents">{t('navigation.documents')}</Link>
+            <Link className="nav-link" to="/investigator">{t('navigation.investigator')}</Link>
           </nav>
         )}
 
@@ -49,7 +50,8 @@ export default function SiteHeader({ compact = false }) {
             <span aria-hidden="true">अ</span>
             {isNepali ? 'English' : 'नेपाली'}
           </button>
-          <Link className="nav-link hidden lg:inline" to="/login">{t('navigation.account')}</Link>
+          <Link className="nav-link hidden lg:inline" to="/account">{t('navigation.account')}</Link>
+          <Link className="nav-link hidden xl:inline" to="/history">{t('navigation.history')}</Link>
         </div>
       </div>
     </header>

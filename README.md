@@ -21,13 +21,15 @@ The project is being delivered as complete vertical slices. A phase is complete 
 | 3A — Jalpa civic investigator | Query router, database facts, local RAG, citations, multilingual answers, safe fallbacks | Complete |
 | 3B — Project discovery | Searchable dashboard, filters, comparison, and evidence-led project discovery | Complete |
 | 4 — Accountability | Explainable anomalies, authentication, mock verification, duplicate-safe feedback | Complete |
-| 5 — Demo hardening | End-to-end acceptance test, accessibility, performance, deployment, backup demo | Next |
+| 4B — Reviewed municipal evidence | Kathmandu, Hetauda, and Rupa budget-versus-spending facts plus five Rupa Ward 2 projects, with page citations and scope warnings | Complete |
+| 4C — Hybrid event investigator | Structured event answers, project-filtered RAG, multilingual composition, and explainable evidence-gap rules | Complete |
+| 5 — Demo hardening | Complete showcase trail, answer charts, document review, voice, secure startup, and end-to-end verification | Complete |
 
 The detailed product brief is in [README_VORDENKER.md](README_VORDENKER.md), and the engineering sequence is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
 ## Winning-demo strategy
 
-The build is centered on one memorable, trustworthy story: a judge switches to Nepali, finds a real Pokhara Ward 8 Jalpa Marg road record, opens the FY 2077/78 allocation, tender, addendum, and audit citations, sees that a tender estimate is not a contract award or payment, asks where the money went, and receives an evidence-bounded answer. The judge can then inspect the exact anomaly rules and complete a mock verification flow before submitting one duplicate-safe project rating.
+The final demo deliberately uses two complementary stories. The evidence-first track shows the real Pokhara, Rupa, Kathmandu, and Hetauda records exactly as supported—including unknown fields. The complete-flow track uses one clearly marked `synthetic_demo` Pokhara Ward 8 project so judges can inspect allocation, tender, award, contractor, payments, milestones, progress, map, RAG citations, charts, anomaly reasoning, and duplicate-safe feedback without mistaking showcase figures for government facts.
 
 This keeps the strongest differentiators connected:
 
@@ -55,8 +57,8 @@ Prerequisites: Git, Python 3.11+, Node.js 20+, and npm. Ollama, Tesseract, Poppl
 ### Windows PowerShell
 
 ```powershell
-git clone https://github.com/Cupid-0x80h/codefest-2026-Die_Vordenker.git
-cd codefest-2026-Die_Vordenker
+git clone https://github.com/karanbuildss/karan-rag.git
+cd karan-rag
 
 python -m venv backend\.venv
 backend\.venv\Scripts\python.exe -m pip install -r requirements.txt
@@ -100,6 +102,16 @@ cd mock-identity-server
 ```
 
 The app runs at `http://localhost:5173`; the backend runs at `http://localhost:8000`; and the mock identity provider runs at `http://localhost:8001`. API documentation is available at `http://localhost:8000/api/docs/` and the health endpoint is `http://localhost:8000/api/v1/health/`.
+
+After installing the Python and frontend dependencies once, Windows users can prepare data, build the local RAG index, evaluate anomaly rules, and start all services with:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start_demo.ps1
+```
+
+Use `-SkipIngestion -SkipIndexing` for a fast restart after the first successful preparation. Logs are written to ignored `*-demo.log` files in the repository root.
+
+The public demo and citizen flow need no administrator. To exercise the protected OCR review queue, create a local operator once with `cd backend` followed by `.\.venv\Scripts\python.exe manage.py createsuperuser`, sign in through `/login`, then open `/account` → “Review extracted documents.” Do not use a shared or hard-coded production password.
 
 `scripts/bootstrap_local_security.py` generates the Django secrets, a separate client secret, the citizen HMAC secret, and a 3072-bit RSA signing key pair in ignored local files. Teammates should run it locally; private keys and `.env` contents must never be pasted into chat or committed. The committed verification identities are fictional demo records. Use phone `9800000001`, citizenship number `TEST-PKR-0001`, and demo OTP `123456` for the Ward 8 acceptance flow.
 
@@ -151,7 +163,7 @@ It includes:
 - an idempotent `seed_demo_data` compatibility command that now seeds the evidence-backed Pokhara Ward 8 Jalpa Marg story;
 - `reconstructed_from_official_sources` classification on the joined project record and `official` classification on each source document;
 - one official FY 2077/78 procurement notice with its IFB, Contract ID, estimate, bid security, and deadline kept separate from unknown award and payment fields;
-- no synthetic contract, payment, progress, milestone, contractor, or coordinate record in the default database;
+- no synthetic value is merged into the official Jalpa record; the complete synthetic showcase is a separate project and document with visible `synthetic_demo` classification;
 - a query-efficient `GET /api/v1/projects/{id}/money-trail/` endpoint with a stable response envelope and explicit unknown fields;
 - a responsive English/Nepali project page showing the supported allocation and clearly separating missing contract, payment, milestone, progress, and location data;
 - honest missing-payment behavior: `null` and `not_yet_reported`, never an invented zero.
@@ -174,12 +186,12 @@ Current verified gates: 9 backend tests in both Django and Pytest, 4 frontend te
 The evidence vertical slice now includes:
 
 - normalized `SourceDocument`, `DocumentPage`, `DataExtractionRecord`, `DocumentChunk`, and project-document citation models with page, quality, review, and source constraints;
-- a tracked evidence manifest for 25 official PDFs across Pokhara Metropolitan City and Rupa Rural Municipality, covering 3,057 pages and six fiscal years;
-- SHA-256 source identity, preserved originals in ignored local media, and raw dataset PDF rules that prevent accidental Git commits;
+- a tracked evidence manifest for 35 official PDF and image sources across Pokhara, Rupa, Kathmandu, and Hetauda, covering 4,312 pages and six fiscal years;
+- SHA-256 source identity, preserved originals in ignored local media, and raw dataset-file rules that prevent accidental Git commits;
 - page-by-page text-quality scoring that detects missing text, replacement characters, fragmented glyphs, duplicated glyphs, and likely legacy Nepali fonts before choosing direct extraction or OCR;
 - selective Tesseract `nep+eng` fallback using a single page render, confidence metadata, explicit warnings, and mandatory review for OCR-derived text;
 - public document list, detail, page, processing-status, and project-evidence APIs with stable citation metadata;
-- an English/Nepali source library and side-by-side PDF/extracted-text viewer;
+- an English/Nepali source library and side-by-side PDF-or-image/extracted-text viewer;
 - a Leaflet/OpenStreetMap project map and Recharts financial comparison connected to the Phase 1 project page;
 - curated project-document links that cite the Jalpa Marg budget entry on PDF page 168, the FY 2077/78 tender and addendum, and the related audit entry on PDF page 48 without treating a probable record join as proven identity;
 - separate FY 2078/79 road-upgrading and FY 2082/83 footpath procurement records with unknown allocations, preventing later packages from being silently merged into the FY 2077/78 project.
@@ -300,7 +312,7 @@ The public discovery slice turns the existing project records into a judge-ready
 - project cards expose allocation, linked-evidence count, tender count, fiscal year, ward, status, classification context, and an immediate route into the complete money trail;
 - `GET /api/v1/projects/discovery-summary/` applies the same filters as the project list and returns structured totals by fiscal year, sector, and status;
 - known allocation totals exclude missing values while separate known and unknown counts prevent absent data from silently becoming zero;
-- `/compare` charts only reported allocations and keeps every filtered project in an accessible table, including projects whose allocation remains unknown;
+- the project discovery API keeps reported and unknown project allocations separate, while `/compare` now uses the reviewed municipality evidence pipeline described in Phase 4B;
 - `/map` plots only source-backed coordinates and presents an evidence-gap state for the current Jalpa records rather than inventing locations;
 - English and Nepali interfaces share one component system, loading/error/empty states, and keyboard-accessible filters;
 - navigation now leads from the landing page to discovery, comparison, map, documents, and the evidence-led project investigation.
@@ -365,6 +377,108 @@ cd backend
 The live integration smoke test covers mock match → OTP → one-time code → signed assertion → verified citizen → first feedback → idempotent retry → duplicate rejection → edit. The hackathon prototype uses a mock identity provider to demonstrate one verified citizen, one accountable project rating.
 
 Current verified gates: 57 Django backend tests, 59 repository-wide Pytest tests including the mock provider, 2 dedicated mock-provider tests, 14 frontend tests, Ruff lint/format, frontend lint, production build, migration drift check, dependency integrity, warning-free OpenAPI generation, and the live signed verification/feedback smoke flow.
+
+## Phase 4B verification
+
+The reviewed evidence slice turns the newly supplied Kathmandu, Hetauda, and Rupa records into structured public values without allowing OCR guesses or unsupported equivalence into the database:
+
+- the evidence manifest now registers the new Rupa and Pokhara progress reports plus Kathmandu and Hetauda budget, expenditure, progress, and audit evidence;
+- PDF, PNG, and JPEG originals are accepted, SHA-256 identified, copied to ignored local media, and exposed by the correct document viewer;
+- `datasets/verified_budget_facts.csv` is a deliberately small human-reviewed ledger; every row must resolve to a registered file hash, municipality, fiscal year, subsector, and valid source page before it can be imported;
+- Kathmandu's signed FY 2081/82 sector statement contributes one reconciled municipality total plus five official sector rows: NPR 25,007,852,000.00 allocated and NPR 13,038,397,147.54 reported spent in total;
+- Hetauda's annual progress review contributes the exact infrastructure-development programme values stated on PDF page 23: NPR 774,162,667.00 budget and NPR 275,534,521.00 spent;
+- Rupa's FY 2081/82 annual progress report contributes the municipality-wide values stated on PDF page 31: NPR 5,149,140,088.57 budget and NPR 4,008,759,994.40 spent, or 77.85% utilization;
+- Rupa's FY 2080/81 Ward 2 implementation table on PDF page 51 contributes five official project records with NPR 1,150,000.00 in known allocations: Andheri Khola Culvert, Danda Gaun-Chhahare Road, Ujeli Andheri Kriyaputri Building, Dalit Multipurpose Building, and Majhkot Kot Bhairav Tourism Infrastructure;
+- each Rupa project retains its page-51 evidence link and the available agreement, monitoring, and payment dates; the source does not state contract awards, contractors, payment amounts, coordinates, or completion percentages, so those fields remain unknown rather than becoming zero or inferred values;
+- the five Rupa rows create 14 structured evidence events (`agreement_recorded`, `monitoring_recorded`, and `payment_date_recorded`); a payment date is explicitly distinct from a reported payment amount;
+- the project page now presents evidence coverage step by step, labels Rupa's official status as “In implementation,” and says “Amount not published” when a payment date exists without a project-level amount;
+- a complete Rupa money trail still requires a signed agreement or award record, a final payment voucher or project-level SuTRA transaction, and a monitoring report, measurement book, or completion certificate; AI inference is not accepted as a substitute;
+- the official Rupa FY 2080/81 Baishakh income/expenditure PDF was checked but contains municipality-wide accounting heads rather than this project's transaction, so it is not linked as project payment evidence;
+- repeated project citations to the same Rupa PDF create one source document with five project-evidence links, preventing duplicate document registration;
+- the Hetauda programme scope may be narrower than Kathmandu's broad infrastructure grouping, so the API and UI mark that comparison as `limited` even though both source readings have strong reliability;
+- unreviewed, unknown, uncited, or missing values are excluded rather than converted to zero;
+- `/compare` provides a bilingual chart, an accessible evidence table, utilization rates calculated from database decimals, scope notes, and links to the preserved source page.
+- `/budgets` now replaces dead-end zero cards with the reviewed municipality evidence table when a selected municipality has aggregate financial evidence but no safely linked project rows; it explicitly states that municipality totals are not individual project values.
+
+Prepare the reviewed comparison after migrations and normal evidence registration:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe manage.py migrate
+.\.venv\Scripts\python.exe manage.py seed_demo_data
+.\.venv\Scripts\python.exe manage.py ingest_evidence
+.\.venv\Scripts\python.exe manage.py import_reviewed_budget_facts
+```
+
+Phase 4B endpoint and page:
+
+```text
+GET http://localhost:8000/api/v1/budget-allocations/comparison/?fiscal_year=2081-82
+http://localhost:5173/compare?fiscalYear=2081-82
+http://localhost:5173/budgets?municipality=RUPA&fiscalYear=2080-81&ward=2
+http://localhost:5173/projects/0ad85beb-fe04-59dc-8032-aa213d0236e8
+```
+
+No package was added to `requirements.txt`: this slice reuses Django, PyMuPDF, Pillow, React, and Recharts already pinned and tested by earlier phases.
+
+Current verified gates: 63 Django backend tests, 65 repository-wide Pytest tests including the mock provider, 16 frontend tests, Django checks, migration drift check, Ruff lint/format, frontend lint, and a production Vite build.
+
+## Phase 4C verification
+
+The investigator now treats each evidence type according to its reliability instead of training a model to memorize municipal records:
+
+- relational project facts and structured evidence events supply exact amounts, dates, status, and explicit unknown fields;
+- accepted page-level chunks are embedded with Ollama `nomic-embed-text-v2-moe` and retrieved from the configured ChromaDB or Pinecone provider using the selected project as a metadata filter;
+- `qwen2.5:3b` may rewrite the verified English or Nepali draft, but it cannot introduce a number or date outside the supplied context; Romanized Nepali uses a deterministic composer to preserve the evidence wording;
+- Rupa event questions can distinguish agreement date, monitoring date, payment date, payment amount, and completion percentage rather than treating one as proof of another;
+- three deterministic rules explain the Rupa evidence gaps: agreement date without linked contract details, payment date without a published paid amount, and implementation activity without numeric progress;
+- every rule includes the data used, a threshold, possible explanations, a recommendation, and the cited page; the result is a review signal, never an accusation;
+- the live Rupa smoke test retrieves two page-51 evidence records, answers the money-journey question in Romanized Nepali, and uses local `qwen2.5:3b` for a verified English agreement answer.
+
+Prepare the hybrid Rupa investigator after the normal migration, seed, and evidence-ingestion commands:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe manage.py detect_anomalies
+.\.venv\Scripts\python.exe manage.py index_project_evidence --project-code RUPA-W02-ANDHERI-CULVERT-2080-81 --extract-linked-pages
+```
+
+No package was added to `requirements.txt`: the slice uses the existing Django, ChromaDB, Ollama embedding, and Ollama chat integrations.
+
+Current verified gates: 68 Django backend tests, 70 repository-wide Pytest tests including the mock provider, 17 frontend tests, Django checks, migration drift check, Ruff lint/format, dependency integrity, warning-free OpenAPI validation, frontend lint, production Vite build, live Chroma indexing, and live Ollama chat verification.
+
+## Phase 5 final showcase
+
+The judge-facing default project is the explicitly synthetic complete-flow record:
+
+```text
+http://localhost:5173/projects/e4d7eeb5-50f8-4a67-9c44-477d121f765d
+```
+
+It contains NPR 10,000,000 allocation, NPR 9,000,000 contract award, NPR 7,200,000 reported payments, five milestones, 58% reported progress, a contractor, and a map point. These are realistic showcase values, not government facts. The project title, source PDF, source note, API classification, investigator answer, chart boundary, and anomaly page all label them `synthetic_demo`. The real Jalpa and Rupa records remain separate and retain their source-backed unknowns.
+
+Final connected behavior:
+
+- all 35 supplied official source files are preserved and open through an iframe-safe streaming endpoint; a synthetic source is generated only for the separately labelled showcase;
+- every registered source has at least a page-level extraction record, while low-confidence OCR remains in a protected review queue at `/admin-documents` and is excluded from retrieval until approved;
+- `index_project_evidence --all-projects` creates project-filtered page chunks and embeddings in Chroma using `nomic-embed-text-v2-moe`; Pinecone remains optional and is not required locally;
+- the investigator routes questions, reads exact monetary values from relational data, retrieves accepted evidence, optionally composes with `qwen2.5:3b`, answers in English/Nepali/Romanized Nepali, returns citations, and renders financial and payment-versus-progress graphs;
+- deterministic anomaly rules identify evidence gaps, payment/progress mismatch, and impossible financial relationships with inputs, thresholds, possible explanations, recommendations, reliability, and sources;
+- browser voice input is feature-detected, exposes an editable transcript, supports cancel, and falls back to text;
+- authenticated investigator sessions are stored relationally and shown only to their owner at `/history`; guest questions are not persisted and private chat is never placed in the public vector collection;
+- the mock identity provider signs short-lived RS256 assertions; Budget Darpan derives a stable HMAC citizen key, so creating another username or email cannot claim the same demo identity;
+- database uniqueness permits one feedback record per verified citizen and project, safe retries return the original, and subsequent changes edit the original with an audit trail;
+- all public evidence, maps, charts, source citations, comparison, anomaly, account, verification, and project links use the same bilingual UI and have loading, empty, or failure states.
+
+### Real-data replacement plan
+
+The synthetic showcase exists only because complete Pokhara award, agreement, voucher, measurement-book, completion, and coordinate records are not currently available. Future imports should replace the synthetic project as a complete official demo only after those exact records are obtained and human-reviewed. Required evidence includes the signed contract award/agreement, contractor identity, project-level payment vouchers or SuTRA transactions, milestone/measurement records, completion report, and verified project coordinates. Until then, synthetic values remain isolated and visibly labelled; they must never be reclassified as official.
+
+The platform does not “train” an LLM on government PDFs. It extracts, reviews, chunks, embeds, and indexes documents for retrieval, which makes new or corrected evidence replaceable without retraining the chat model.
+
+For an optional Pinecone deployment, first create a cosine index compatible with the configured 768-dimensional Ollama embedding model. Put a newly generated key only in ignored `backend/.env`, then set `VECTOR_DB_PROVIDER=pinecone`, `PINECONE_INDEX`, and `PINECONE_NAMESPACE`. The current Pinecone SDK adapter supports upsert, filtered query, and project/document deletion; `PINECONE_FALLBACK_TO_CHROMA=True` keeps the service usable if Pinecone configuration is unavailable. Never paste or commit an API key.
+
+Final verified gates: 79 Django tests, 81 repository-wide Pytest tests including the separate mock identity provider, 19 frontend tests, Django system and migration checks, Ruff lint/format, frontend lint, production Vite build, dependency integrity, warning-free OpenAPI validation, live Chroma/Ollama indexing and question answering, all public route smoke checks, and live source-PDF streaming.
 
 ## Dependency policy
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import {
+  getBudgetComparison,
   getFiscalYears,
   getLocalGovernments,
   getProjectDiscoverySummary,
@@ -40,6 +41,15 @@ export default function useProjectDiscovery(searchParams) {
     [serializedFilters],
   )
   const apiParams = useMemo(() => buildApiParams(filters), [filters])
+  const budgetEvidenceParams = useMemo(() => {
+    if (!filters.municipality || filters.search || filters.ward || filters.status) return null
+    return {
+      municipality: filters.municipality,
+      ...(filters.fiscalYear ? { fiscal_year: filters.fiscalYear } : {}),
+      ...(filters.sector ? { sector: filters.sector } : {}),
+    }
+  }, [filters])
+  const [budgetEvidence, setBudgetEvidence] = useState(null)
   const [projects, setProjects] = useState([])
   const [summary, setSummary] = useState(null)
   const [options, setOptions] = useState({
@@ -82,11 +92,15 @@ export default function useProjectDiscovery(searchParams) {
     Promise.all([
       getProjects(apiParams),
       getProjectDiscoverySummary(apiParams),
+      budgetEvidenceParams
+        ? getBudgetComparison(budgetEvidenceParams).catch(() => ({ data: null }))
+        : Promise.resolve({ data: null }),
     ])
-      .then(([projectResponse, summaryResponse]) => {
+      .then(([projectResponse, summaryResponse, budgetEvidenceResponse]) => {
         if (!active) return
         setProjects(projectResponse.data || [])
         setSummary(summaryResponse.data || null)
+        setBudgetEvidence(budgetEvidenceResponse.data || null)
         setState('ready')
       })
       .catch(() => {
@@ -96,9 +110,10 @@ export default function useProjectDiscovery(searchParams) {
     return () => {
       active = false
     }
-  }, [apiParams, retryKey])
+  }, [apiParams, budgetEvidenceParams, retryKey])
 
   return {
+    budgetEvidence,
     filters,
     options,
     projects,

@@ -19,6 +19,11 @@ class Command(BaseCommand):
             help="Stable project code to index.",
         )
         parser.add_argument(
+            "--all-projects",
+            action="store_true",
+            help="Index every project that has deliberately linked source evidence.",
+        )
+        parser.add_argument(
             "--extract-linked-pages",
             action="store_true",
             help="Selectively extract cited and high-value boundary pages before indexing.",
@@ -35,10 +40,21 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        try:
-            project = Project.objects.get(code=options["project_code"])
-        except Project.DoesNotExist as exc:
-            raise CommandError("Project not found.") from exc
+        if options["all_projects"]:
+            projects = (
+                Project.objects.filter(document_links__isnull=False).distinct().order_by("code")
+            )
+        else:
+            try:
+                projects = [Project.objects.get(code=options["project_code"])]
+            except Project.DoesNotExist as exc:
+                raise CommandError("Project not found.") from exc
+        if not projects:
+            raise CommandError("No projects with linked evidence were found.")
+        for project in projects:
+            self._index_project(project, options)
+
+    def _index_project(self, project, options):
 
         extracted_pages = []
         if options["extract_linked_pages"]:
@@ -50,7 +66,8 @@ class Command(BaseCommand):
         reviewed_chunks = materialize_reviewed_page_chunks(project)
         payloads = project_evidence_payloads(project)
         if not payloads:
-            raise CommandError("No page-linked evidence is available for this project.")
+            self.stdout.write(self.style.WARNING(f"Skipped {project.code}: no evidence payloads."))
+            return
         try:
             provider = get_vector_store_provider()
             provider.delete_project(str(project.id))

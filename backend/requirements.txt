@@ -25,6 +25,7 @@ pytesseract==0.3.13
 
 # Phase 3 local multilingual retrieval; Ollama is accessed through its local HTTP API
 chromadb==1.5.9
+pinecone==9.1.0
 
 # Quality gates
 pytest==9.1.1

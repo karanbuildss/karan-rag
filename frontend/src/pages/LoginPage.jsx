@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { loginAccount, registerAccount } from '../api/client'
 import SiteFooter from '../components/SiteFooter'
@@ -9,6 +9,9 @@ import SiteHeader from '../components/SiteHeader'
 export default function LoginPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const requestedReturn = searchParams.get('returnTo') || '/budgets'
+  const returnTo = requestedReturn.startsWith('/') && !requestedReturn.startsWith('//') ? requestedReturn : '/budgets'
   const [mode, setMode] = useState('login')
   const [form, setForm] = useState({ username: '', email: '', password: '' })
   const [state, setState] = useState('idle')
@@ -21,7 +24,7 @@ export default function LoginPage() {
     try {
       if (mode === 'register') await registerAccount(form)
       else await loginAccount({ username: form.username, password: form.password })
-      navigate('/verify')
+      navigate(`/verify?returnTo=${encodeURIComponent(returnTo)}`)
     } catch {
       setState('error')
     }

@@ -7,6 +7,7 @@ from budgets.management.commands.seed_demo_data import (
     FOOTPATH_PROJECT_ID,
 )
 from budgets.models import BudgetAllocation
+from budgets.services.showcase import SHOWCASE_PROJECT_ID
 from django.core.management import call_command
 from django.db import IntegrityError, connection, transaction
 from django.test import TestCase
@@ -16,7 +17,7 @@ from payments.models import Payment
 from procurement.models import ContractAward, Contractor, Tender
 from rest_framework.test import APIClient
 
-from projects.models import Project
+from projects.models import Project, ProjectEvidenceEvent
 
 
 class MoneyTrailApiTests(TestCase):
@@ -70,6 +71,43 @@ class MoneyTrailApiTests(TestCase):
         self.assertIsNone(summary["reported_contract_balance"])
         self.assertEqual(summary["payment_reporting_status"], "not_yet_reported")
 
+    def test_rupa_process_dates_do_not_invent_payment_or_progress_amounts(self):
+        project = Project.objects.get(code="RUPA-W02-ANDHERI-CULVERT-2080-81")
+
+        response = self.client.get(reverse("project-money-trail", kwargs={"pk": project.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()["data"]
+        summary = payload["financial_summary"]
+        self.assertEqual(summary["allocated_amount"], "200000.00")
+        self.assertIsNone(summary["contracted_amount"])
+        self.assertIsNone(summary["reported_paid_amount"])
+        self.assertEqual(
+            summary["payment_reporting_status"],
+            "date_reported_amount_missing",
+        )
+        self.assertEqual(
+            payload["evidence_coverage"]["payment"],
+            {
+                "status": "date_reported_amount_missing",
+                "date_bs": "2081/02/03",
+                "amount": None,
+            },
+        )
+        self.assertEqual(
+            payload["evidence_coverage"]["physical_progress"]["status"],
+            "status_reported_percentage_missing",
+        )
+        self.assertEqual(
+            {event["event_type"] for event in payload["evidence_events"]},
+            {
+                "agreement_recorded",
+                "monitoring_recorded",
+                "payment_date_recorded",
+            },
+        )
+        self.assertTrue(all(event["source_page"] == 51 for event in payload["evidence_events"]))
+
     def test_money_trail_query_count_is_bounded(self):
         with CaptureQueriesContext(connection) as queries:
             response = self.client.get(self.url)
@@ -82,21 +120,41 @@ class MoneyTrailApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["meta"]["pagination"]["count"], 3)
+        self.assertEqual(payload["meta"]["pagination"]["count"], 4)
         self.assertIn(str(DEMO_PROJECT_ID), {item["id"] for item in payload["data"]})
 
     def test_seed_command_is_idempotent(self):
         call_command("seed_demo_data", verbosity=0)
 
         self.assertEqual(Project.objects.filter(pk=DEMO_PROJECT_ID).count(), 1)
-        self.assertEqual(Project.objects.count(), 3)
-        self.assertEqual(Tender.objects.count(), 3)
-        self.assertEqual(ContractAward.objects.count(), 0)
-        self.assertEqual(Payment.objects.count(), 0)
+        self.assertEqual(Project.objects.count(), 9)
+        self.assertEqual(ProjectEvidenceEvent.objects.count(), 14)
+        self.assertEqual(Tender.objects.count(), 4)
+        self.assertEqual(ContractAward.objects.count(), 1)
+        self.assertEqual(Payment.objects.count(), 3)
         self.assertEqual(
             Project.objects.get(pk=DEMO_PROJECT_ID).data_classification,
             "reconstructed_from_official_sources",
         )
+
+    def test_synthetic_showcase_has_a_complete_and_explicitly_labelled_trail(self):
+        response = self.client.get(
+            reverse("project-money-trail", kwargs={"pk": SHOWCASE_PROJECT_ID})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()["data"]
+        self.assertEqual(data["project"]["data_classification"], "synthetic_demo")
+        self.assertIn("synthetic", data["project"]["data_note_en"].casefold())
+        self.assertEqual(data["financial_summary"]["allocated_amount"], "10000000.00")
+        self.assertEqual(data["financial_summary"]["contracted_amount"], "9000000.00")
+        self.assertEqual(data["financial_summary"]["reported_paid_amount"], "7200000.00")
+        self.assertEqual(data["financial_summary"]["reported_contract_balance"], "1800000.00")
+        self.assertEqual(data["financial_summary"]["payment_reporting_status"], "reported")
+        self.assertEqual(len(data["payments"]), 3)
+        self.assertEqual(len(data["milestones"]), 5)
+        self.assertIsNotNone(data["project"]["location"])
+        self.assertEqual(data["procurement"][0]["award"]["data_classification"], "synthetic_demo")
 
     def test_separate_later_procurements_do_not_invent_allocations(self):
         follow_up = Project.objects.get(pk=FOLLOW_UP_PROJECT_ID)

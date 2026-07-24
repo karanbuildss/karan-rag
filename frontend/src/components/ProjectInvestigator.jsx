@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { askInvestigator } from '../api/client'
+import InvestigatorVisualization from './InvestigatorVisualization'
 
 const suggestionKeys = ['moneyJourney', 'payment', 'audit']
 
@@ -11,6 +12,34 @@ export default function ProjectInvestigator({ projectId }) {
   const [question, setQuestion] = useState('')
   const [result, setResult] = useState(null)
   const [state, setState] = useState('idle')
+  const [sessionId, setSessionId] = useState(null)
+  const [voiceState, setVoiceState] = useState('idle')
+  const recognitionRef = useRef(null)
+  const SpeechRecognition = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition
+
+  useEffect(() => () => recognitionRef.current?.abort(), [])
+
+  const startVoice = () => {
+    if (!SpeechRecognition) return
+    const recognition = new SpeechRecognition()
+    recognition.lang = document.documentElement.lang === 'np' ? 'ne-NP' : 'en-US'
+    recognition.continuous = false
+    recognition.interimResults = false
+    recognition.onresult = (event) => {
+      setQuestion(event.results[0][0].transcript)
+      setVoiceState('transcribed')
+    }
+    recognition.onerror = () => setVoiceState('error')
+    recognition.onend = () => setVoiceState((current) => current === 'recording' ? 'idle' : current)
+    recognitionRef.current = recognition
+    setVoiceState('recording')
+    recognition.start()
+  }
+
+  const cancelVoice = () => {
+    recognitionRef.current?.abort()
+    setVoiceState('idle')
+  }
 
   const submitQuestion = async (event) => {
     event?.preventDefault()
@@ -22,8 +51,10 @@ export default function ProjectInvestigator({ projectId }) {
       const response = await askInvestigator({
         question: cleanedQuestion,
         projectId,
+        sessionId,
       })
       setResult(response.data)
+      if (response.data.session_id) setSessionId(response.data.session_id)
       setState('ready')
     } catch {
       setState('error')
@@ -68,6 +99,16 @@ export default function ProjectInvestigator({ projectId }) {
               placeholder={t('investigator.placeholder')}
               value={question}
             />
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              {SpeechRecognition ? (
+                voiceState === 'recording'
+                  ? <button className="secondary-action" onClick={cancelVoice} type="button">{t('investigator.voice.cancel')}</button>
+                  : <button className="secondary-action" onClick={startVoice} type="button">{t('investigator.voice.start')}</button>
+              ) : <span className="text-xs text-muted">{t('investigator.voice.unsupported')}</span>}
+              {voiceState === 'recording' && <span className="review-pill" role="status">{t('investigator.voice.recording')}</span>}
+              {voiceState === 'transcribed' && <span className="text-xs text-muted" role="status">{t('investigator.voice.review')}</span>}
+              {voiceState === 'error' && <span className="source-warning" role="alert">{t('investigator.voice.error')}</span>}
+            </div>
             <div className="mt-3 flex flex-wrap gap-2" aria-label={t('investigator.suggestionLabel')}>
               {suggestionKeys.map((key) => (
                 <button
@@ -107,6 +148,13 @@ export default function ProjectInvestigator({ projectId }) {
                   {t('investigator.answerTitle')}
                 </h3>
                 <p className="mt-3 whitespace-pre-line leading-7 text-ink">{result.answer}</p>
+
+                {(result.visualizations || []).map((visualization) => (
+                  <InvestigatorVisualization
+                    key={visualization.id}
+                    visualization={visualization}
+                  />
+                ))}
 
                 {result.citations.length > 0 && (
                   <div className="mt-7">

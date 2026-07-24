@@ -156,6 +156,32 @@ class IdentityVerificationTests(TestCase):
 
     @patch("accounts.services._public_key")
     @patch("accounts.services._exchange_code")
+    def test_same_identity_cannot_verify_a_second_email_account(self, exchange, public_key):
+        exchange.return_value = self.assertion()
+        public_key.return_value = self.public_pem
+        first = self.client.post(
+            reverse("verification-complete"), {"code": "d" * 24}, format="json"
+        )
+        self.assertEqual(first.status_code, 200)
+
+        second_user = User.objects.create_user(
+            username="second-email-account",
+            email="second@example.test",
+            password="safe-demo-password-123",
+        )
+        self.client.force_login(second_user)
+        second = self.client.post(
+            reverse("verification-complete"), {"code": "e" * 24}, format="json"
+        )
+
+        self.assertEqual(second.status_code, 400)
+        self.assertEqual(second.data["errors"][0]["code"], "identity_already_linked")
+        self.assertFalse(
+            CitizenProfile.objects.filter(user=second_user, citizen_key__isnull=False).exists()
+        )
+
+    @patch("accounts.services._public_key")
+    @patch("accounts.services._exchange_code")
     def test_expired_assertion_is_rejected(self, exchange, public_key):
         exchange.return_value = self.assertion(expired=True)
         public_key.return_value = self.public_pem

@@ -10,7 +10,12 @@ import { DEMO_PROJECT_ID } from './config'
 const DocumentDetailPage = lazy(() => import('./pages/DocumentDetailPage'))
 const DocumentLibraryPage = lazy(() => import('./pages/DocumentLibraryPage'))
 const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'))
+const AccountPage = lazy(() => import('./pages/AccountPage'))
+const AdminDocumentsPage = lazy(() => import('./pages/AdminDocumentsPage'))
+const BudgetComparisonPage = lazy(() => import('./pages/BudgetComparisonPage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
+const InvestigatorPage = lazy(() => import('./pages/InvestigatorPage'))
+const HistoryPage = lazy(() => import('./pages/HistoryPage'))
 const ProjectDiscoveryPage = lazy(() => import('./pages/ProjectDiscoveryPage'))
 const ProjectPage = lazy(() => import('./pages/ProjectPage'))
 const VerifyPage = lazy(() => import('./pages/VerifyPage'))
@@ -164,10 +169,14 @@ function App() {
           <Route path="/documents" element={<DocumentLibraryPage />} />
           <Route path="/documents/:documentId" element={<DocumentDetailPage />} />
           <Route path="/budgets" element={<ProjectDiscoveryPage mode="list" />} />
-          <Route path="/compare" element={<ProjectDiscoveryPage mode="compare" />} />
+          <Route path="/compare" element={<BudgetComparisonPage />} />
           <Route path="/map" element={<ProjectDiscoveryPage mode="map" />} />
           <Route path="/anomalies" element={<AnomaliesPage />} />
+          <Route path="/admin-documents" element={<AdminDocumentsPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/investigator" element={<InvestigatorPage />} />
+          <Route path="/history" element={<HistoryPage />} />
           <Route path="/verify" element={<VerifyPage />} />
           <Route path="/projects/:projectId" element={<ProjectPage />} />
         </Routes>

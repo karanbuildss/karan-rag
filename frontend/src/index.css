@@ -313,6 +313,76 @@
     padding: 1.35rem;
   }
 
+  .evidence-coverage {
+    border: 1px solid var(--color-line);
+    border-radius: 0.65rem;
+    background: white;
+    padding: 1.35rem;
+  }
+
+  .coverage-grid {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .coverage-item {
+    display: grid;
+    grid-template-columns: 0.7rem 1fr;
+    gap: 0.75rem;
+    border: 1px solid var(--color-line);
+    border-radius: 0.55rem;
+    background: var(--color-canvas);
+    padding: 0.9rem;
+  }
+
+  .coverage-dot {
+    width: 0.65rem;
+    height: 0.65rem;
+    margin-top: 0.3rem;
+    border-radius: 999px;
+  }
+
+  .coverage-dot--verified {
+    background: #23825f;
+  }
+
+  .coverage-dot--partial {
+    background: var(--color-amber);
+  }
+
+  .coverage-dot--missing {
+    border: 2px solid #7d8985;
+    background: transparent;
+  }
+
+  .coverage-status {
+    border-radius: 999px;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+  }
+
+  .coverage-status--verified {
+    background: #e5f5ec;
+    color: #176044;
+  }
+
+  .coverage-status--partial {
+    background: #fff1cf;
+    color: #754a0c;
+  }
+
+  .coverage-status--missing {
+    background: #edf0ee;
+    color: #4f5c58;
+  }
+
+  .coverage-next {
+    border-left: 3px solid var(--color-teal);
+    background: #f0f7f5;
+    padding: 1rem;
+  }
+
   .project-map {
     overflow: hidden;
     min-height: 25rem;
@@ -626,6 +696,26 @@
     border: 0;
   }
 
+  .document-preview img {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 36rem;
+    object-fit: contain;
+    background: white;
+  }
+
+  .compare-strong {
+    background: #e2f1eb;
+    color: #245c4b;
+  }
+
+  .compare-limited,
+  .compare-not_comparable {
+    background: #fff2d8;
+    color: #805016;
+  }
+
   .extracted-page {
     min-width: 0;
   }
@@ -686,6 +776,10 @@
     .milestone-row {
       grid-template-columns: 1fr auto auto;
       align-items: center;
+    }
+
+    .coverage-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .document-viewer-grid {

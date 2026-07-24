@@ -16,6 +16,8 @@
     "anomalies": "Review indicators",
     "account": "Account",
     "documents": "Source library",
+    "investigator": "Ask AI",
+    "history": "History",
     "principles": "Our standard",
     "status": "Build status"
   },
@@ -85,9 +87,9 @@
   "discovery": {
     "modes": {
       "list": {
-        "eyebrow": "Evidence-led project discovery",
-        "title": "Find the public project behind the budget line.",
-        "description": "Search real project records by municipality, ward, fiscal year, sector, or status, then open the complete money trail and its cited evidence."
+        "eyebrow": "Evidence-led budget and project discovery",
+        "title": "Explore reviewed municipal money and the projects it can support.",
+        "description": "Select a municipality to see reviewed budget and spending evidence. Where project-level records exist, open their complete money trail and citations."
       },
       "compare": {
         "eyebrow": "Structured comparison",
@@ -126,6 +128,21 @@
     "errorTitle": "Project discovery is temporarily unavailable.",
     "errorDescription": "Check that the Budget Darpan API is running, then try again.",
     "empty": "No projects match these filters. Clear one or more filters and try again.",
+    "municipalityEvidence": {
+      "eyebrow": "Reviewed municipality result",
+      "title": "Official budget and reported spending are available",
+      "description": "These are municipality or sector totals, not invented project values. They remain useful while individual project allocation, contract, payment, and location records are reviewed separately.",
+      "tableCaption": "Reviewed municipality budget and reported spending with source pages",
+      "sector": "Reporting scope",
+      "allocated": "Budget",
+      "spent": "Reported spent",
+      "utilization": "Utilization",
+      "source": "Evidence boundary",
+      "openSource": "Inspect source · page {{page}}",
+      "projectEyebrow": "Project-level evidence status",
+      "projectTitle": "Municipality totals found; project breakdown is still being reviewed",
+      "projectBoundary": "Budget Darpan will not turn these municipality totals into fake projects. Named projects will appear here only after their allocation, status, and source pages are safely linked."
+    },
     "summary": {
       "label": "Filtered project summary",
       "projects": "Projects found",
@@ -167,6 +184,45 @@
       "safety": "Budget Darpan never estimates a project location from a citizen address or an unverified place-name match."
     }
   },
+  "municipalComparison": {
+    "back": "Back to project explorer",
+    "eyebrow": "Reviewed municipal evidence",
+    "title": "Compare reported budget and spending without hiding evidence gaps.",
+    "description": "Every value below comes from a registered official document and a reviewed page citation. Different reporting scopes are labelled before they are compared.",
+    "fiscalYear": "Fiscal year",
+    "loading": "Loading reviewed municipal facts…",
+    "error": "The reviewed comparison could not be loaded. Public project and document browsing remains available.",
+    "emptyTitle": "No reviewed comparison is available for this fiscal year.",
+    "emptyDescription": "Unknown or unreviewed values are not converted to zero. Add and review official expenditure evidence before showing it here.",
+    "municipalities": "municipalities represented",
+    "sectors": "reported sectors",
+    "reviewedFacts": "reviewed, cited facts",
+    "evidenceBoundary": "Evidence boundary",
+    "chartEyebrow": "Allocation and reported spending",
+    "chartTitle": "Official values by municipality and sector",
+    "chartDescription": "The chart includes only known, reviewed values. Use the table below to inspect reporting scope and the exact source page.",
+    "chartLabel": "Bar chart comparing reviewed allocation and spending values in Nepalese rupees",
+    "tableTitle": "Source-aware comparison",
+    "tableDescription": "A strong reliability label means the numbers were manually checked against the cited source. Comparability separately describes whether the reporting scopes align.",
+    "tableCaption": "Reviewed municipal budget and spending comparison with citations",
+    "municipality": "Municipality",
+    "sector": "Reported sector",
+    "allocated": "Allocated",
+    "spent": "Reported spent",
+    "utilization": "Utilization",
+    "evidence": "Evidence and scope",
+    "openCitation": "Inspect source · page {{page}}",
+    "reliability": {
+      "limited": "Limited evidence",
+      "moderate": "Moderately checked",
+      "strong": "Manually reconciled"
+    },
+    "comparability": {
+      "not_comparable": "Not comparable",
+      "limited": "Limited comparability",
+      "strong": "Aligned reporting scope"
+    }
+  },
   "project": {
     "loading": "Loading the project money trail…",
     "errorEyebrow": "Connection issue",
@@ -184,15 +240,20 @@
     },
     "ward": "Ward {{number}}",
     "officialProgress": "Officially reported progress",
+    "officialStatus": "Official record status",
     "progressLabel": "Officially reported progress: {{progress}} percent",
+    "progressNotPublished": "The cited source reports implementation activity but does not publish a numeric completion percentage.",
     "fiscalYear": "Fiscal year",
     "financialEyebrow": "Financial summary · NPR",
     "allocated": "Project allocation",
     "contracted": "Contract award",
     "reportedPaid": "Reported payments",
     "reportedBalance": "Reported contract balance",
-    "reportedBalanceNote": "Contract minus available payment records",
+    "reportedBalanceNote": "Requires both a reported contract amount and reported payments",
     "unknown": "Unknown",
+    "notPublished": "Not published",
+    "amountNotPublished": "Amount not published",
+    "cannotCalculate": "Cannot calculate",
     "notReported": "No payment data has been reported for this project.",
     "procurementNotReported": "No procurement notice has been found for this project.",
     "awardNotReported": "No contract award has been found for this project.",
@@ -213,11 +274,52 @@
     "chartEyebrow": "Visual comparison",
     "chartTitle": "Allocation, contract, and reported payments",
     "chartEmpty": "No comparable allocation, contract, or payment values have been reported.",
+    "chartBoundary": "Only published amounts are plotted. A missing contract or payment amount is not treated as zero.",
     "mapEyebrow": "Project geography",
     "mapTitle": "Where this project is located",
     "mapDescription": "A marker appears only when a source-backed project location is available. Missing coordinates never block the evidence trail.",
     "mapLabel": "Map location for {{title}}",
     "mapUnavailable": "No coordinates have been reported for this project.",
+    "coverage": {
+      "eyebrow": "Evidence coverage",
+      "title": "What is verified—and what record is still needed",
+      "description": "A published date proves that a process event was recorded. It does not prove the corresponding amount or completion percentage.",
+      "status": {
+        "verified": "Verified",
+        "partial": "Partially evidenced",
+        "missing": "Record not found"
+      },
+      "allocation": "Budget allocation",
+      "agreement": "Agreement date",
+      "monitoring": "Monitoring date",
+      "procurement": "Procurement notice",
+      "contract": "Contract award and amount",
+      "payment": "Payment evidence",
+      "progress": "Physical progress",
+      "amountReported": "Published amount: {{amount}}.",
+      "dateReported": "Published date: {{date}} BS.",
+      "notFound": "No deliberately linked record has been found.",
+      "agreementMissing": "No agreement date has been found in the linked evidence.",
+      "monitoringMissing": "No monitoring date has been found in the linked evidence.",
+      "procurementReported": "An official procurement notice is linked to this project.",
+      "procurementMissing": "No separate procurement notice has been linked; this may have used a non-tender implementation route.",
+      "contractReported": "An awarded contract and contract amount are published.",
+      "contractMissing": "No award or signed contract amount has been found.",
+      "paymentDateOnly": "The official table records {{date}} BS as the payment date, but does not publish the amount.",
+      "paymentMissing": "Neither a payment date nor a payment amount has been found.",
+      "progressReported": "Published physical progress: {{progress}}%.",
+      "progressStatusOnly": "The official status is “{{status}}”; no numeric completion percentage is published.",
+      "progressMissing": "No official physical-progress record has been found.",
+      "nextTitle": "Records needed to complete this money trail",
+      "nextDescription": "These gaps cannot be solved with AI inference. Add the corresponding official record and cite the exact page or transaction.",
+      "required": {
+        "contract": "Signed agreement or award record showing the implementation method, responsible party, and agreed amount.",
+        "payment": "Final payment voucher or project-level SuTRA transaction detail showing the actual paid amount.",
+        "completion": "Monitoring report, measurement book, or completion certificate showing physical progress or completed quantity."
+      },
+      "openCitation": "Open the cited evidence",
+      "openOfficialCatalogue": "Check the official source catalogue"
+    },
     "status": {
       "unknown": "Status not evidenced",
       "planned": "Planned",
@@ -229,6 +331,7 @@
     },
     "paymentStatus": {
       "reported": "Sum of available reported payments",
+      "date_reported_amount_missing": "An official payment date is recorded, but the amount is not published",
       "not_yet_reported": "Payment information is not yet reported"
     },
     "timeline": {
@@ -249,10 +352,21 @@
   "investigator": {
     "eyebrow": "Evidence-grounded civic investigator",
     "title": "Ask where the project money went",
+    "standaloneEyebrow": "Bilingual public evidence assistant",
+    "standaloneTitle": "Investigate the complete showcase trail.",
+    "standaloneDescription": "This standalone entry uses the visibly synthetic complete-flow project. Open any real project to ask questions within its own evidence boundary.",
     "description": "Ask in English, Nepali, or Romanized Nepali. Exact amounts come from the project database; document claims remain attached to cited pages.",
     "safety": "Budget Darpan does not accuse. It identifies patterns and evidence that may require further review.",
     "questionLabel": "Your question",
     "placeholder": "For example: Pokhara Ward 8 ko road project ko paisa kaha gayo?",
+    "voice": {
+      "start": "Use voice input",
+      "cancel": "Cancel recording",
+      "recording": "Listening…",
+      "review": "Transcript ready—review or edit it before submitting.",
+      "unsupported": "Voice input is not supported by this browser; type your question instead.",
+      "error": "Voice input failed. Please type your question."
+    },
     "suggestionLabel": "Suggested investigation questions",
     "suggestions": {
       "moneyJourney": "Pokhara Ward 8 ko road project ko paisa kaha gayo?",
@@ -263,6 +377,7 @@
     "investigating": "Checking facts and sources…",
     "error": "The investigator is temporarily unavailable. You can still inspect the money trail and source documents.",
     "answerTitle": "Evidence-bounded answer",
+    "visualizationEyebrow": "Answer visualization",
     "language": "Detected language: {{language}}",
     "citationsTitle": "Open the supporting evidence",
     "citationPage": "Page {{page}} · {{section}}",
@@ -316,12 +431,15 @@
     "inspect": "Inspect document",
     "source": "Open official source",
     "pdfTitle": "{{title}}, PDF page {{page}}",
-    "fileUnavailable": "The preserved local PDF is not available in this environment.",
+    "imageTitle": "{{title}}, preserved source image",
+    "fileUnavailable": "The preserved local source is not available in this environment.",
+    "openPreserved": "Open preserved source in a new tab",
     "extractedText": "Extracted evidence",
     "page": "Page {{number}}",
     "method": "Method",
     "quality": "Text quality",
     "pagePending": "This page has not been extracted or accepted yet.",
+    "pagePendingHelp": "The original source remains viewable on the left. Only reviewed or accepted text is added to the AI knowledge base.",
     "previous": "Previous page",
     "next": "Next page",
     "type": {
@@ -330,6 +448,7 @@
       "annual_program": "Annual program",
       "economic_act": "Economic act",
       "progress_report": "Progress report",
+      "expenditure_report": "Expenditure report",
       "procurement_notice": "Procurement notice",
       "contract_award": "Contract award",
       "payment_record": "Payment record",
@@ -379,12 +498,14 @@
     "title": "Verify one mock citizen identity.",
     "description": "The identity provider matches synthetic credentials, issues a one-time code, and signs a short-lived assertion for Budget Darpan.",
     "mockBoundary": "This is not Nagarik App or official government verification. All provided identities are synthetic hackathon records.",
+    "oneIdentityBoundary": "Creating another email or username cannot create another verified rating: one signed demo identity maps to one privacy-preserving citizen key.",
     "loginFirst": "Sign in before verification",
     "serviceError": "The verification service is temporarily unavailable.",
     "phone": "Demo phone number",
     "citizenship": "Demo citizenship number",
     "demoCredentials": "Demo: 9800000001 · TEST-PKR-0001. These values are sent directly to the separate mock provider.",
     "matchError": "The demo identity could not be matched.",
+    "identityLinked": "This demo identity is already linked to another account. Use that account; a second email cannot claim the same identity.",
     "start": "Match demo identity",
     "otp": "Demo OTP",
     "demoOtp": "Demo OTP: {{otp}}",
@@ -393,7 +514,22 @@
     "verified": "Verified citizen",
     "successTitle": "Mock verification completed",
     "successDescription": "{{username}} can now submit one accountable rating per project.",
-    "browse": "Choose a project"
+    "browse": "Choose a project",
+    "return": "Return to the project"
+  },
+  "accountPage": {
+    "eyebrow": "Account and verification",
+    "title": "Your accountability account",
+    "error": "Account status is temporarily unavailable.",
+    "guest": "Public evidence is available without an account. Sign in only to save history or submit accountable feedback.",
+    "signIn": "Sign in or register",
+    "verified": "Mock identity verified",
+    "unverified": "Identity not verified",
+    "role": "Role: {{role}}",
+    "verify": "Complete mock verification",
+    "history": "Private question history",
+    "review": "Review extracted documents",
+    "signOut": "Sign out"
   },
   "anomalies": {
     "eyebrow": "Explainable review indicators",
@@ -421,6 +557,29 @@
     "eyebrow": "Public accountability",
     "title": "Rules explain the concern; verified citizens add local evidence.",
     "description": "Automated indicators remain separate from citizen ratings, and neither is presented as proof of corruption."
+  },
+  "documentReview": {
+    "eyebrow": "Controlled evidence review",
+    "title": "Approve OCR text before it enters retrieval.",
+    "boundary": "Only officials, moderators, or administrators can accept extracted evidence. The preserved original remains unchanged.",
+    "forbidden": "Sign in with an authorized demo operator account to review documents.",
+    "error": "The review queue is temporarily unavailable.",
+    "empty": "No extracted pages currently require human review.",
+    "page": "Page {{page}}",
+    "quality": "Automated text quality score: {{score}}",
+    "approve": "Approve for retrieval",
+    "reject": "Reject extracted text",
+    "open": "Open preserved document"
+  },
+  "history": {
+    "eyebrow": "Private account history",
+    "title": "Revisit your evidence-backed questions.",
+    "description": "Only your authenticated account can read these sessions. Public document embeddings never contain private chat history.",
+    "login": "Sign in to view your private investigator history.",
+    "error": "Chat history is temporarily unavailable.",
+    "empty": "No saved questions yet. Ask the investigator while signed in.",
+    "general": "General question",
+    "roles": { "user": "You", "assistant": "Budget Darpan" }
   },
   "feedback": {
     "title": "Verified citizen feedback",

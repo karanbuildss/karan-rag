@@ -1,9 +1,13 @@
-from config.api import EnvelopeReadOnlyModelViewSet
+from config.api import EnvelopeReadOnlyModelViewSet, success_response
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 
 from budgets.models import BudgetAllocation, FiscalYear, Sector
+from budgets.selectors import get_reviewed_budget_comparison
 from budgets.serializers import (
     BudgetAllocationSerializer,
+    BudgetComparisonResponseSerializer,
     FiscalYearSerializer,
     SectorSerializer,
 )
@@ -55,4 +59,32 @@ class BudgetAllocationViewSet(EnvelopeReadOnlyModelViewSet):
             "local_government",
             "fiscal_year",
             "subsector__sector",
+            "source_document",
         )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("fiscal_year", str, description="Fiscal-year code, e.g. 2081-82"),
+            OpenApiParameter("sector", str, description="Optional broad sector code"),
+            OpenApiParameter(
+                "municipality",
+                str,
+                description="Optional comma-separated local-government codes",
+            ),
+        ],
+        responses=BudgetComparisonResponseSerializer,
+    )
+    @action(detail=False, methods=["get"], url_path="comparison")
+    def comparison(self, request):
+        municipalities = [
+            code.strip()
+            for code in request.query_params.get("municipality", "").split(",")
+            if code.strip()
+        ]
+        payload = get_reviewed_budget_comparison(
+            fiscal_year_code=request.query_params.get("fiscal_year", "").strip(),
+            sector_code=request.query_params.get("sector", "").strip(),
+            municipalities=municipalities,
+        )
+        serializer = BudgetComparisonResponseSerializer(payload)
+        return success_response(serializer.data)

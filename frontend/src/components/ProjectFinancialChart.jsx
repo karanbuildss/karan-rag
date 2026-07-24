@@ -1,6 +1,17 @@
 import { useTranslation } from 'react-i18next'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
+function formatAxisValue(value) {
+  const numericValue = Number(value)
+  if (Math.abs(numericValue) >= 1_000_000) {
+    return `${Number((numericValue / 1_000_000).toFixed(1))}m`
+  }
+  if (Math.abs(numericValue) >= 1_000) {
+    return `${Number((numericValue / 1_000).toFixed(0))}k`
+  }
+  return `${numericValue}`
+}
+
 export default function ProjectFinancialChart({ formatMoney, summary }) {
   const { t } = useTranslation()
   const values = [
@@ -49,13 +60,14 @@ export default function ProjectFinancialChart({ formatMoney, summary }) {
             <XAxis dataKey="label" tick={{ fill: '#5f6c69', fontSize: 12 }} />
             <YAxis
               tick={{ fill: '#5f6c69', fontSize: 11 }}
-              tickFormatter={(value) => `${Math.round(value / 1000000)}m`}
+              tickFormatter={formatAxisValue}
             />
             <Tooltip formatter={(value) => formatMoney(value)} />
             <Bar dataKey="value" fill="#196a60" radius={[5, 5, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <p className="mt-3 text-xs leading-5 text-muted">{t('project.chartBoundary')}</p>
       <ul className="sr-only">
         {values.map((item) => (
           <li key={item.key}>

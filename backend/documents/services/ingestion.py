@@ -28,6 +28,13 @@ REQUIRED_COLUMNS = {
     "data_classification",
 }
 
+SUPPORTED_EVIDENCE_SUFFIXES = {
+    ".pdf": SourceDocument.FileFormat.PDF,
+    ".png": SourceDocument.FileFormat.IMAGE,
+    ".jpg": SourceDocument.FileFormat.IMAGE,
+    ".jpeg": SourceDocument.FileFormat.IMAGE,
+}
+
 
 def _sha256(path):
     digest = hashlib.sha256()
@@ -43,8 +50,8 @@ def _resolve_source_file(dataset_root, relative_path):
         candidate.relative_to(dataset_root)
     except ValueError as exc:
         raise ManifestImportError("A manifest path escapes the dataset directory.") from exc
-    if not candidate.is_file() or candidate.suffix.lower() != ".pdf":
-        raise ManifestImportError(f"PDF not found: {relative_path}")
+    if not candidate.is_file() or candidate.suffix.lower() not in SUPPORTED_EVIDENCE_SUFFIXES:
+        raise ManifestImportError(f"Evidence file not found or unsupported: {relative_path}")
     return candidate
 
 
@@ -70,7 +77,7 @@ def import_evidence_manifest(manifest_path, *, limit=None):
     if not manifest_path.is_file():
         raise ManifestImportError(f"Manifest not found: {manifest_path}")
     dataset_root = manifest_path.parent.resolve()
-    imported = []
+    imported = {}
 
     with manifest_path.open("r", encoding="utf-8-sig", newline="") as source:
         reader = csv.DictReader(source)
@@ -108,6 +115,7 @@ def import_evidence_manifest(manifest_path, *, limit=None):
             document.local_government = local_government
             document.fiscal_year = fiscal_year
             document.language = _cell(row, "language")
+            document.file_format = SUPPORTED_EVIDENCE_SUFFIXES[source_file.suffix.lower()]
             document.original_filename = source_file.name
             document.source_url = _cell(row, "source_url")
             document.source_url_kind = _cell(row, "source_url_kind")
@@ -146,6 +154,6 @@ def import_evidence_manifest(manifest_path, *, limit=None):
                 )
                 link.full_clean()
                 link.save()
-            imported.append(document)
+            imported[document.pk] = document
 
-    return imported
+    return list(imported.values())

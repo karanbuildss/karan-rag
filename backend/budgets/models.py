@@ -46,6 +46,21 @@ class BudgetAllocation(models.Model):
         RECURRENT = "recurrent", "Recurrent"
         CAPITAL = "capital", "Capital"
         FINANCING = "financing", "Financing"
+        TOTAL = "total", "Reported total"
+
+    class ReviewStatus(models.TextChoices):
+        REVIEW_REQUIRED = "review_required", "Review required"
+        REVIEWED = "reviewed", "Reviewed"
+
+    class Reliability(models.TextChoices):
+        LIMITED = "limited", "Limited"
+        MODERATE = "moderate", "Moderate"
+        STRONG = "strong", "Strong"
+
+    class Comparability(models.TextChoices):
+        NOT_COMPARABLE = "not_comparable", "Not comparable"
+        LIMITED = "limited", "Limited comparability"
+        STRONG = "strong", "Strong comparability"
 
     local_government = models.ForeignKey(
         LocalGovernment,
@@ -65,12 +80,37 @@ class BudgetAllocation(models.Model):
     budget_type = models.CharField(max_length=12, choices=BudgetType.choices)
     allocated_amount = models.DecimalField(max_digits=18, decimal_places=2)
     spent_amount = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    source_document = models.ForeignKey(
+        "documents.SourceDocument",
+        on_delete=models.PROTECT,
+        related_name="budget_allocations",
+        null=True,
+        blank=True,
+    )
+    source_page = models.PositiveIntegerField(null=True, blank=True)
+    review_status = models.CharField(
+        max_length=20,
+        choices=ReviewStatus.choices,
+        default=ReviewStatus.REVIEW_REQUIRED,
+    )
+    reliability = models.CharField(
+        max_length=12,
+        choices=Reliability.choices,
+        default=Reliability.LIMITED,
+    )
+    comparability = models.CharField(
+        max_length=20,
+        choices=Comparability.choices,
+        default=Comparability.LIMITED,
+    )
+    source_scope_en = models.CharField(max_length=500, blank=True)
+    source_scope_np = models.CharField(max_length=500, blank=True)
     data_classification = models.CharField(
         max_length=40,
         choices=DataClassification.choices,
         default=DataClassification.SYNTHETIC_DEMO,
     )
-    source_url = models.URLField(blank=True)
+    source_url = models.URLField(max_length=1000, blank=True)
 
     class Meta:
         ordering = ["local_government__name_en", "-fiscal_year__code", "subsector__name_en"]
@@ -86,6 +126,10 @@ class BudgetAllocation(models.Model):
             models.CheckConstraint(
                 condition=models.Q(spent_amount__isnull=True) | models.Q(spent_amount__gte=0),
                 name="allocation_spent_nonnegative_or_unknown",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(source_page__isnull=True) | models.Q(source_page__gte=1),
+                name="allocation_source_page_positive",
             ),
         ]
         indexes = [

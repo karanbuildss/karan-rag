@@ -51,6 +51,11 @@ export async function getSectors(params = {}) {
   return response.data
 }
 
+export async function getBudgetComparison(params = {}) {
+  const response = await api.get('/budget-allocations/comparison/', { params })
+  return response.data
+}
+
 export async function getCsrfToken() {
   const response = await api.get('/auth/csrf/')
   return response.data
@@ -103,6 +108,11 @@ export async function getFeedbackSummary(projectId) {
   return response.data
 }
 
+export async function getFeedback(params = {}) {
+  const response = await api.get('/feedback/', { params })
+  return response.data
+}
+
 export async function createFeedback(payload, idempotencyKey) {
   const response = await api.post('/feedback/', payload, {
     headers: { 'Idempotency-Key': idempotencyKey },
@@ -120,12 +130,17 @@ export async function getProjectEvidence(projectId) {
   return response.data
 }
 
-export async function askInvestigator({ question, projectId, language = 'auto' }) {
+export async function askInvestigator({ question, projectId, language = 'auto', sessionId = null }) {
   const response = await api.post(
     '/investigator/query/',
-    { question, project_id: projectId, language },
+    { question, project_id: projectId, language, session_id: sessionId },
     { timeout: 65000 },
   )
+  return response.data
+}
+
+export async function getChatSessions() {
+  const response = await api.get('/chat-sessions/')
   return response.data
 }
 
@@ -141,6 +156,16 @@ export async function getDocument(documentId) {
 
 export async function getDocumentPage(documentId, pageNumber) {
   const response = await api.get(`/documents/${documentId}/pages/${pageNumber}/`)
+  return response.data
+}
+
+export async function getDocumentReviewQueue() {
+  const response = await api.get('/documents/review-queue/')
+  return response.data
+}
+
+export async function reviewDocumentPage(documentId, pageNumber, decision) {
+  const response = await api.post(`/documents/${documentId}/pages/${pageNumber}/review/`, { decision })
   return response.data
 }
 

@@ -1,5 +1,7 @@
 # Local Codex/agent engineering instructions must never be committed.
 AGENTS.md
+TEAM_PROJECT_GUIDE_PRIVATE.md
+reports_private/
 
 # Environment files and secrets
 .env
@@ -36,9 +38,15 @@ coverage/
 chroma_db/
 .chroma/
 
-# Local evidence corpus. Commit the manifest, never the downloaded source PDFs.
+# Local evidence corpus. Commit the manifest, never downloaded source files.
 datasets/**/*.pdf
 datasets/**/*.PDF
+datasets/**/*.png
+datasets/**/*.PNG
+datasets/**/*.jpg
+datasets/**/*.JPG
+datasets/**/*.jpeg
+datasets/**/*.JPEG
 
 # Editors and operating systems
 .idea/

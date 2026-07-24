@@ -3,6 +3,7 @@ import uuid
 from budgets.models import BudgetAllocation, FiscalYear, SubSector
 from config.models import DataClassification
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from geography.models import LocalGovernment, Ward
 
@@ -186,3 +187,61 @@ class ProjectMilestone(models.Model):
 
     def __str__(self):
         return f"{self.project} · {self.title_en}"
+
+
+class ProjectEvidenceEvent(models.Model):
+    """A dated official process event that does not imply a financial amount.
+
+    Municipal reports sometimes publish an agreement, monitoring, or payment
+    date without publishing the corresponding contract value, payment amount,
+    or physical progress percentage. Keeping the event separate prevents a
+    known date from being presented as a known amount.
+    """
+
+    class EventType(models.TextChoices):
+        AGREEMENT_RECORDED = "agreement_recorded", "Agreement recorded"
+        MONITORING_RECORDED = "monitoring_recorded", "Monitoring recorded"
+        PAYMENT_DATE_RECORDED = "payment_date_recorded", "Payment date recorded"
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="evidence_events",
+    )
+    event_type = models.CharField(max_length=30, choices=EventType.choices)
+    date_bs = models.CharField(
+        max_length=10,
+        validators=[
+            RegexValidator(
+                regex=r"^\d{4}/\d{2}/\d{2}$",
+                message="BS date must use YYYY/MM/DD format.",
+            )
+        ],
+    )
+    date_ad = models.DateField(null=True, blank=True)
+    source_page = models.PositiveIntegerField()
+    source_url = models.URLField(blank=True)
+    note_en = models.CharField(max_length=240, blank=True)
+    note_np = models.CharField(max_length=240, blank=True)
+    data_classification = models.CharField(
+        max_length=40,
+        choices=DataClassification.choices,
+        default=DataClassification.OFFICIAL,
+    )
+
+    class Meta:
+        ordering = ["source_page", "event_type", "date_bs"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "event_type", "date_bs"],
+                name="unique_project_evidence_event_date",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(source_page__gte=1),
+                name="project_evidence_event_source_page_positive",
+            ),
+        ]
+        indexes = [models.Index(fields=["project", "event_type"])]
+
+    def __str__(self):
+        return f"{self.project} · {self.get_event_type_display()} · {self.date_bs} BS"

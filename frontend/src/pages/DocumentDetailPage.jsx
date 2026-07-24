@@ -84,10 +84,27 @@ export default function DocumentDetailPage() {
           <div className="document-viewer-grid">
             <div className="document-preview">
               {document.file_url ? (
-                <iframe
-                  src={`${document.file_url}#page=${requestedPage}`}
-                  title={t('documents.pdfTitle', { title, page: requestedPage })}
-                />
+                <>
+                  {document.file_format === 'image' ? (
+                    <img
+                      alt={t('documents.imageTitle', { title })}
+                      src={document.file_url}
+                    />
+                  ) : (
+                    <iframe
+                      src={`${document.file_url}#page=${requestedPage}`}
+                      title={t('documents.pdfTitle', { title, page: requestedPage })}
+                    />
+                  )}
+                  <a
+                    className="secondary-action mt-4"
+                    href={document.file_url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {t('documents.openPreserved')}
+                  </a>
+                </>
               ) : (
                 <div className="empty-evidence">
                   <p>{t('documents.fileUnavailable')}</p>
@@ -126,7 +143,10 @@ export default function DocumentDetailPage() {
                   <pre className="extracted-text mt-5">{page.extracted_text}</pre>
                 </>
               ) : (
-                <p className="empty-evidence mt-5">{t('documents.pagePending')}</p>
+                <div className="empty-evidence mt-5">
+                  <p>{t('documents.pagePending')}</p>
+                  <p className="mt-2 text-xs leading-5">{t('documents.pagePendingHelp')}</p>
+                </div>
               )}
               <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-line pt-5">
                 <button

@@ -51,6 +51,7 @@ def existing_value(path, key):
 
 
 def main():
+    backend_secret = existing_value(BACKEND_ENV, "SECRET_KEY") or secrets.token_urlsafe(48)
     citizen_secret = existing_value(BACKEND_ENV, "CITIZEN_HASH_SECRET") or secrets.token_urlsafe(48)
     client_secret = existing_value(
         BACKEND_ENV,
@@ -61,10 +62,12 @@ def main():
     set_values(
         BACKEND_ENV,
         {
+            "SECRET_KEY": backend_secret,
             "CITIZEN_HASH_SECRET": citizen_secret,
             "MOCK_IDENTITY_CLIENT_SECRET": client_secret,
             "MOCK_IDENTITY_PUBLIC_KEY_PATH": "../mock-identity-server/keys/public.pem",
         },
+        template=ROOT / "backend" / ".env.example",
     )
     set_values(
         MOCK_ENV,

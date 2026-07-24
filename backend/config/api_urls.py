@@ -8,6 +8,7 @@ from accounts.views import (
 )
 from anomalies.views import AnomalyFlagViewSet
 from budgets.views import BudgetAllocationViewSet, FiscalYearViewSet, SectorViewSet
+from chat.views import ChatSessionViewSet
 from django.urls import path
 from documents.views import SourceDocumentViewSet
 from feedback.views import CitizenFeedbackViewSet
@@ -25,6 +26,7 @@ router.register("projects", ProjectViewSet, basename="project")
 router.register("documents", SourceDocumentViewSet, basename="source-document")
 router.register("feedback", CitizenFeedbackViewSet, basename="feedback")
 router.register("anomalies", AnomalyFlagViewSet, basename="anomaly")
+router.register("chat-sessions", ChatSessionViewSet, basename="chat-session")
 
 urlpatterns = [
     path("auth/csrf/", CsrfTokenView.as_view(), name="auth-csrf"),

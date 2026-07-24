@@ -31,6 +31,11 @@ ROMANIZED_MARKERS = {
     "wada",
     "ward",
     "bhuktani",
+    "kahile",
+    "miti",
+    "samjhauta",
+    "anugaman",
+    "pragati",
     "thekka",
 }
 
@@ -115,15 +120,26 @@ def route_question(question, *, has_project):
         "payment",
         "contract amount",
         "progress",
+        "agreement",
+        "monitoring",
+        "payment date",
         "कति",
         "विनियोजन",
         "बजेट",
         "खर्च",
         "भुक्तानी",
         "प्रगति",
+        "सम्झौता",
+        "अनुगमन",
+        "मिति",
         "kati",
         "budget",
         "bhuktani",
+        "samjhauta",
+        "anugaman",
+        "kahile",
+        "miti",
+        "pragati",
     )
     if _contains(text, database_terms):
         return InvestigationRoute.DATABASE_QUERY

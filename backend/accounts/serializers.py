@@ -41,6 +41,7 @@ class AccountDataSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True)
     role = serializers.CharField(required=False)
     identity_verified = serializers.BooleanField(required=False)
+    is_staff = serializers.BooleanField(required=False)
     verified_municipality_code = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -73,6 +74,7 @@ def serialize_account(user):
         "email": user.email,
         "role": profile.role,
         "identity_verified": profile.is_identity_verified,
+        "is_staff": user.is_staff,
         "verified_municipality_code": profile.verified_municipality_code or None,
         "verified_ward_number": profile.verified_ward_number,
     }

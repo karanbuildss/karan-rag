@@ -94,12 +94,95 @@ class ChromaVectorStoreProvider:
         self.collection.delete(where={"project_id": str(project_id)})
 
 
+class PineconeVectorStoreProvider:
+    """Pinecone adapter using the same local Ollama embedding space as Chroma."""
+
+    name = "pinecone"
+
+    def __init__(self, *, api_key=None, index_name=None, namespace=None, embeddings=None):
+        key = api_key or settings.PINECONE_API_KEY
+        if not key:
+            raise VectorStoreUnavailable("PINECONE_API_KEY is not configured.")
+        try:
+            from pinecone import Pinecone
+        except ImportError as exc:
+            raise VectorStoreUnavailable(
+                "The Pinecone SDK is not installed. Install backend requirements first."
+            ) from exc
+        try:
+            self.client = Pinecone(api_key=key)
+            self.index = self.client.Index(index_name or settings.PINECONE_INDEX)
+        except Exception as exc:
+            raise VectorStoreUnavailable("The configured Pinecone index is unavailable.") from exc
+        self.namespace = namespace or settings.PINECONE_NAMESPACE
+        self.embeddings = embeddings or OllamaEmbeddingProvider()
+
+    def upsert(self, chunks: list[DocumentChunkPayload]) -> None:
+        if not chunks:
+            return
+        vectors = self.embeddings.embed_documents(
+            [chunk.embedding_text or chunk.text for chunk in chunks]
+        )
+        records = []
+        for chunk, vector in zip(chunks, vectors, strict=True):
+            metadata = _clean_metadata(chunk.metadata)
+            metadata["chunk_text"] = chunk.text
+            records.append({"id": chunk.id, "values": vector, "metadata": metadata})
+        self.index.upsert(vectors=records, namespace=self.namespace)
+
+    def query(self, text, *, top_k, filters=None):
+        response = self.index.query(
+            vector=self.embeddings.embed_query(text),
+            top_k=top_k,
+            filter=filters or None,
+            namespace=self.namespace,
+            include_metadata=True,
+            include_values=False,
+        )
+        matches = response.get("matches", []) if isinstance(response, dict) else response.matches
+        results = []
+        for match in matches:
+            if isinstance(match, dict):
+                chunk_id = match["id"]
+                score = match.get("score", 0)
+                metadata = dict(match.get("metadata") or {})
+            else:
+                chunk_id = match.id
+                score = match.score
+                metadata = dict(match.metadata or {})
+            chunk_text = metadata.pop("chunk_text", "")
+            results.append(
+                RetrievedChunk(
+                    id=chunk_id,
+                    text=chunk_text,
+                    score=float(score),
+                    metadata=metadata,
+                )
+            )
+        return results
+
+    def delete_document(self, document_id):
+        self.index.delete(
+            filter={"document_id": str(document_id)},
+            namespace=self.namespace,
+        )
+
+    def delete_project(self, project_id):
+        self.index.delete(
+            filter={"project_id": str(project_id)},
+            namespace=self.namespace,
+        )
+
+
 def get_vector_store_provider():
     provider = settings.VECTOR_DB_PROVIDER.lower()
     if provider == "chroma":
         return ChromaVectorStoreProvider()
     if provider == "pinecone":
-        raise VectorStoreUnavailable(
-            "Pinecone is not enabled in Phase 3A; use VECTOR_DB_PROVIDER=chroma."
-        )
+        try:
+            return PineconeVectorStoreProvider()
+        except VectorStoreUnavailable:
+            if settings.PINECONE_FALLBACK_TO_CHROMA:
+                return ChromaVectorStoreProvider()
+            raise
     raise VectorStoreUnavailable(f"Unsupported vector provider: {provider}")

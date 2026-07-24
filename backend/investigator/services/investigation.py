@@ -13,6 +13,100 @@ from investigator.services.routing import (
 )
 
 
+def _visualizations(facts):
+    if not facts:
+        return []
+    financial_rows = [
+        {
+            "key": "allocated",
+            "label_en": "Allocated",
+            "label_np": "विनियोजित",
+            "value": facts["budget"]["allocated_amount"],
+        },
+        {
+            "key": "contracted",
+            "label_en": "Contracted",
+            "label_np": "ठेक्का रकम",
+            "value": facts["contract"]["amount"],
+        },
+        {
+            "key": "paid",
+            "label_en": "Reported paid",
+            "label_np": "प्रतिवेदित भुक्तानी",
+            "value": facts["payments"]["reported_total"],
+        },
+    ]
+    visualizations = []
+    if any(row["value"] is not None for row in financial_rows):
+        visualizations.append(
+            {
+                "id": "financial_flow",
+                "type": "bar",
+                "title_en": "Allocation, contract, and reported payments",
+                "title_np": "विनियोजन, ठेक्का र प्रतिवेदित भुक्तानी",
+                "unit": "NPR",
+                "data": financial_rows,
+                "boundary_en": "Unknown values are omitted, never converted to zero.",
+                "boundary_np": "अज्ञात मानलाई शून्यमा परिवर्तन नगरी छोडिएको छ।",
+            }
+        )
+
+    contract_amount = facts["contract"]["amount"]
+    paid_amount = facts["payments"]["reported_total"]
+    progress = facts["progress"]["official_percent"]
+    if contract_amount is not None and paid_amount is not None and progress is not None:
+        payment_percent = round(float(paid_amount) / float(contract_amount) * 100, 2)
+        visualizations.append(
+            {
+                "id": "payment_progress",
+                "type": "bar",
+                "title_en": "Payment versus physical progress",
+                "title_np": "भुक्तानी र भौतिक प्रगति तुलना",
+                "unit": "percent",
+                "data": [
+                    {
+                        "key": "payment_percent",
+                        "label_en": "Contract paid",
+                        "label_np": "ठेक्का भुक्तानी",
+                        "value": payment_percent,
+                    },
+                    {
+                        "key": "physical_progress",
+                        "label_en": "Physical progress",
+                        "label_np": "भौतिक प्रगति",
+                        "value": float(progress),
+                    },
+                ],
+                "boundary_en": (
+                    "A difference is a review signal and may have legitimate timing or "
+                    "mobilization explanations."
+                ),
+                "boundary_np": ("अन्तर समीक्षा सङ्केत हो; समय वा परिचालन पेश्कीजस्ता वैध कारण हुन सक्छन्।"),
+            }
+        )
+    return visualizations
+
+
+def _ensure_classification_boundary(answer, language, facts):
+    if not facts or facts["project"]["data_classification"] != "synthetic_demo":
+        return answer
+    notices = {
+        QuestionLanguage.ENGLISH: (
+            " This is explicitly labelled synthetic demonstration data, not an official "
+            "government record."
+        ),
+        QuestionLanguage.NEPALI: (
+            " यो स्पष्ट रूपमा कृत्रिम प्रदर्शन तथ्याङ्क हो, आधिकारिक सरकारी अभिलेख होइन।"
+        ),
+        QuestionLanguage.ROMANIZED_NEPALI: (
+            " Yo explicitly synthetic demo data ho, official government record hoina."
+        ),
+    }
+    notice = notices.get(language, notices[QuestionLanguage.ENGLISH])
+    markers = ("synthetic", "कृत्रिम")
+    return answer if any(marker in answer.casefold() for marker in markers) else answer + notice
+
+
 def _limitations(facts):
     if not facts:
         return [
@@ -31,21 +125,44 @@ def _limitations(facts):
             }
         )
     if "payments" in unknown:
-        messages.append(
-            {
-                "code": "payments_not_reported",
-                "message": (
-                    "No verified payment records are available; this does not mean zero spending."
-                ),
-            }
-        )
+        if facts["payments"]["status"] == "date_reported_amount_missing":
+            messages.append(
+                {
+                    "code": "payment_amount_unpublished",
+                    "message": (
+                        "An official payment date is recorded, but no verified paid amount "
+                        "is available; the amount remains unknown, not zero."
+                    ),
+                }
+            )
+        else:
+            messages.append(
+                {
+                    "code": "payments_not_reported",
+                    "message": (
+                        "No verified payment records are available; this does not mean "
+                        "zero spending."
+                    ),
+                }
+            )
     if "official_progress" in unknown:
-        messages.append(
-            {
-                "code": "progress_unknown",
-                "message": "No verified official progress percentage is available.",
-            }
-        )
+        if facts["progress"]["official_status"] != "unknown":
+            messages.append(
+                {
+                    "code": "progress_percentage_unpublished",
+                    "message": (
+                        "An official implementation status is available, but no numeric "
+                        "completion percentage is published."
+                    ),
+                }
+            )
+        else:
+            messages.append(
+                {
+                    "code": "progress_unknown",
+                    "message": "No verified official progress percentage is available.",
+                }
+            )
     if "exact_location" in unknown:
         messages.append(
             {
@@ -150,6 +267,8 @@ def investigate(*, question, project=None, requested_language="auto"):
     elif language == QuestionLanguage.ROMANIZED_NEPALI:
         generation_provider = "deterministic_romanized"
 
+    answer = _ensure_classification_boundary(answer, language, facts)
+
     return {
         "question": question,
         "route": str(route),
@@ -168,6 +287,7 @@ def investigate(*, question, project=None, requested_language="auto"):
         "structured_facts": facts,
         "anomalies": anomalies,
         "citations": citations,
+        "visualizations": _visualizations(facts),
         "limitations": _limitations(facts),
         "provenance": {
             "structured_values": "relational_database",

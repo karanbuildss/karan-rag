@@ -27,6 +27,8 @@ def build_structured_facts(project):
         unknown_fields.extend(["contract_award", "winning_contractor", "contract_amount"])
     if summary["reported_paid_amount"] is None:
         unknown_fields.append("payments")
+        if summary["payment_reporting_status"] == "date_reported_amount_missing":
+            unknown_fields.append("payment_amount")
     if trail["project"]["official_progress_percent"] is None:
         unknown_fields.append("official_progress")
     if not trail["milestones"]:
@@ -65,9 +67,12 @@ def build_structured_facts(project):
             "records": trail["payments"],
         },
         "progress": {
+            "official_status": trail["project"]["status"],
             "official_percent": trail["project"]["official_progress_percent"],
             "milestones": trail["milestones"],
         },
+        "evidence_events": trail["evidence_events"],
+        "evidence_coverage": trail["evidence_coverage"],
         "location": trail["project"]["location"],
         "unknown_fields": unknown_fields,
     }

@@ -15,12 +15,17 @@ def document_upload_path(instance, filename):
 
 
 class SourceDocument(models.Model):
+    class FileFormat(models.TextChoices):
+        PDF = "pdf", "PDF"
+        IMAGE = "image", "Image"
+
     class DocumentType(models.TextChoices):
         BUDGET_BOOK = "budget_book", "Budget book / red book"
         BUDGET_SPEECH = "budget_speech", "Budget speech"
         ANNUAL_PROGRAM = "annual_program", "Annual policy or program"
         ECONOMIC_ACT = "economic_act", "Economic act or bill"
         PROGRESS_REPORT = "progress_report", "Progress report"
+        EXPENDITURE_REPORT = "expenditure_report", "Expenditure report"
         PROCUREMENT_NOTICE = "procurement_notice", "Procurement notice"
         CONTRACT_AWARD = "contract_award", "Contract award"
         PAYMENT_RECORD = "payment_record", "Payment record"
@@ -59,6 +64,11 @@ class SourceDocument(models.Model):
         related_name="source_documents",
     )
     language = models.CharField(max_length=10, choices=Language.choices)
+    file_format = models.CharField(
+        max_length=10,
+        choices=FileFormat.choices,
+        default=FileFormat.PDF,
+    )
     original_file = models.FileField(upload_to=document_upload_path, blank=True)
     original_filename = models.CharField(max_length=260)
     sha256 = models.CharField(max_length=64, blank=True, db_index=True)

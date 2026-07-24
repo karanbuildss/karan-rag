@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from budgets.management.commands.seed_demo_data import DEMO_PROJECT_ID
 from django.core.management import call_command
 from django.test import TestCase
@@ -35,13 +37,33 @@ class ProjectDiscoveryApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         totals = response.data["data"]["totals"]
-        self.assertEqual(totals["project_count"], 3)
-        self.assertEqual(totals["known_allocation_count"], 1)
+        self.assertEqual(totals["project_count"], 9)
+        self.assertEqual(totals["known_allocation_count"], 7)
         self.assertEqual(totals["unknown_allocation_count"], 2)
-        self.assertEqual(totals["allocated_total"], "800000.00")
-        self.assertEqual(totals["procurement_project_count"], 3)
-        self.assertEqual(totals["payment_reported_project_count"], 0)
-        self.assertEqual(totals["geolocated_project_count"], 0)
+        self.assertEqual(totals["allocated_total"], "11950000.00")
+        self.assertEqual(totals["procurement_project_count"], 4)
+        self.assertEqual(totals["payment_reported_project_count"], 1)
+        self.assertEqual(totals["geolocated_project_count"], 1)
+
+    def test_rupa_filter_returns_five_official_allocated_projects(self):
+        response = self.client.get(
+            reverse("project-list"),
+            {
+                "local_government__code": "RUPA",
+                "fiscal_year__code": "2080-81",
+                "ward__number": 2,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["meta"]["pagination"]["count"], 5)
+        projects = response.data["data"]
+        self.assertEqual(
+            sum((Decimal(project["allocated_amount"]) for project in projects), Decimal("0")),
+            Decimal("1150000.00"),
+        )
+        self.assertTrue(all(project["data_classification"] == "official" for project in projects))
+        self.assertTrue(all(project["status"] == "implementation" for project in projects))
 
     def test_discovery_summary_uses_the_same_filters_as_the_project_list(self):
         response = self.client.get(

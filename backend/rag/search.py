@@ -22,6 +22,7 @@ IRREGULAR_ENGLISH_LEMMAS = {
     "went": "go",
 }
 QUERY_EXPANSIONS = {
+    "anugaman": ("monitoring", "progress", "अनुगमन"),
     "bajet": ("budget", "बजेट"),
     "bhuktani": ("payment", "paid", "भुक्तानी"),
     "gayo": ("go", "spend", "खर्च"),
@@ -29,7 +30,10 @@ QUERY_EXPANSIONS = {
     "kata": ("where", "कता"),
     "kharcha": ("spend", "payment", "खर्च"),
     "lekha": ("audit", "लेखापरीक्षण"),
+    "miti": ("date", "मिति"),
     "paisa": ("money", "payment", "spend", "पैसा", "रकम"),
+    "pragati": ("progress", "completion", "प्रगति"),
+    "samjhauta": ("agreement", "contract", "सम्झौता"),
     "thekka": ("tender", "contract", "award", "ठेक्का", "बोलपत्र"),
     "wada": ("ward", "वडा"),
     "yojana": ("project", "आयोजना"),
@@ -53,7 +57,22 @@ RELATIONSHIP_SEARCH_TERMS = {
     },
     "audit": {"advance", "audit", "report", "पेश्की", "लेखापरीक्षण", "प्रतिवेदन"},
     "payment": {"money", "paid", "payment", "spend", "खर्च", "भुक्तानी", "पैसा", "रकम"},
-    "progress": {"completion", "milestone", "progress", "प्रगति", "सम्पन्न"},
+    "progress": {
+        "agreement",
+        "anugaman",
+        "completion",
+        "date",
+        "milestone",
+        "monitoring",
+        "pragati",
+        "progress",
+        "samjhauta",
+        "अनुगमन",
+        "प्रगति",
+        "मिति",
+        "सम्झौता",
+        "सम्पन्न",
+    },
 }
 
 

@@ -1,3 +1,5 @@
+from config.models import DataClassification
+from django.urls import reverse
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -24,6 +26,7 @@ class SourceDocumentListSerializer(serializers.ModelSerializer):
             "title_np",
             "document_type",
             "language",
+            "file_format",
             "original_filename",
             "source_url",
             "source_url_kind",
@@ -41,14 +44,14 @@ class SourceDocumentListSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_file_url(self, instance) -> str | None:
-        if not instance.original_file:
+        if (
+            not instance.original_file
+            and instance.data_classification != DataClassification.SYNTHETIC_DEMO
+        ):
             return None
         request = self.context.get("request")
-        return (
-            request.build_absolute_uri(instance.original_file.url)
-            if request
-            else instance.original_file.url
-        )
+        file_path = reverse("source-document-file", kwargs={"pk": instance.pk})
+        return request.build_absolute_uri(file_path) if request else file_path
 
 
 class DocumentPageSummarySerializer(serializers.ModelSerializer):

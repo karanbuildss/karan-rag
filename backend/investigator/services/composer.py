@@ -207,7 +207,50 @@ def insufficient_answer(language):
     return "I do not have enough evidence in the available documents and structured data."
 
 
-def compose_answer(question, route, language, facts, citations):
+def _anomaly_answer(anomalies, language):
+    if not anomalies:
+        if language == QuestionLanguage.NEPALI:
+            return "यस आयोजनामा हाल कुनै सक्रिय विसङ्गति सूचक छैन। यसको अर्थ सबै प्रमाण पूर्ण छन् भन्ने होइन।"
+        if language == QuestionLanguage.ROMANIZED_NEPALI:
+            return (
+                "Yo project ma ahile active anomaly indicator chaina. Yasle sabai "
+                "evidence complete cha bhanne hoina."
+            )
+        return (
+            "This project currently has no active anomaly indicators. This does not mean "
+            "that every supporting record is complete."
+        )
+
+    selected = anomalies[:3]
+    if language == QuestionLanguage.NEPALI:
+        details = " ".join(
+            f"{item['title_np']}: {item['reason_np']} सिफारिस: {item['recommendation_np']}"
+            for item in selected
+        )
+        return (
+            f"यस आयोजनामा {len(anomalies)} सक्रिय समीक्षा सूचक छन्। {details} "
+            "यी सूचक समीक्षा गर्नुपर्ने ढाँचा हुन्, गलत कामको प्रमाण होइनन्।"
+        )
+    if language == QuestionLanguage.ROMANIZED_NEPALI:
+        details = " ".join(
+            f"{item['title_en']}: {item['reason_en']} Recommendation: {item['recommendation_en']}"
+            for item in selected
+        )
+        return (
+            f"Yo project ma {len(anomalies)} active review indicator chan. {details} "
+            "Yi indicator review signal hun, wrongdoing ko proof hoina."
+        )
+    details = " ".join(
+        f"{item['title_en']}: {item['reason_en']} Recommendation: {item['recommendation_en']}"
+        for item in selected
+    )
+    return (
+        f"This project has {len(anomalies)} active review indicators. {details} "
+        "These indicators are review signals, not proof of wrongdoing."
+    )
+
+
+def compose_answer(question, route, language, facts, citations, anomalies=None):
     if route == InvestigationRoute.GENERAL_HELP:
         if language == QuestionLanguage.NEPALI:
             return "आयोजना छानेर विनियोजन, बोलपत्र, भुक्तानी, प्रगति वा स्रोत कागजातबारे प्रश्न सोध्नुहोस्।"
@@ -230,4 +273,6 @@ def compose_answer(question, route, language, facts, citations):
         return _english_database_answer(question, facts)
     if route == InvestigationRoute.DOCUMENT_RAG:
         return _document_answer(citations, language)
+    if route == InvestigationRoute.ANOMALY_EXPLANATION:
+        return _anomaly_answer(anomalies or [], language)
     return _project_answer(facts, citations, language)

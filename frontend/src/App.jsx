@@ -9,8 +9,11 @@ import { DEMO_PROJECT_ID } from './config'
 
 const DocumentDetailPage = lazy(() => import('./pages/DocumentDetailPage'))
 const DocumentLibraryPage = lazy(() => import('./pages/DocumentLibraryPage'))
+const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
 const ProjectDiscoveryPage = lazy(() => import('./pages/ProjectDiscoveryPage'))
 const ProjectPage = lazy(() => import('./pages/ProjectPage'))
+const VerifyPage = lazy(() => import('./pages/VerifyPage'))
 
 const journeyKeys = ['allocation', 'project', 'payment', 'evidence']
 const principleKeys = ['numbers', 'citations', 'anomalies']
@@ -163,6 +166,9 @@ function App() {
           <Route path="/budgets" element={<ProjectDiscoveryPage mode="list" />} />
           <Route path="/compare" element={<ProjectDiscoveryPage mode="compare" />} />
           <Route path="/map" element={<ProjectDiscoveryPage mode="map" />} />
+          <Route path="/anomalies" element={<AnomaliesPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/verify" element={<VerifyPage />} />
           <Route path="/projects/:projectId" element={<ProjectPage />} />
         </Routes>
       </Suspense>

@@ -20,14 +20,14 @@ The project is being delivered as complete vertical slices. A phase is complete 
 | 2A — Real evidence baseline | Official budget, procurement, addendum, and audit linkage with explicit missing-data states | Complete |
 | 3A — Jalpa civic investigator | Query router, database facts, local RAG, citations, multilingual answers, safe fallbacks | Complete |
 | 3B — Project discovery | Searchable dashboard, filters, comparison, and evidence-led project discovery | Complete |
-| 4 — Accountability | Explainable anomalies, authentication, mock verification, duplicate-safe feedback | Next |
-| 5 — Demo hardening | End-to-end acceptance test, accessibility, performance, deployment, backup demo | Planned |
+| 4 — Accountability | Explainable anomalies, authentication, mock verification, duplicate-safe feedback | Complete |
+| 5 — Demo hardening | End-to-end acceptance test, accessibility, performance, deployment, backup demo | Next |
 
 The detailed product brief is in [README_VORDENKER.md](README_VORDENKER.md), and the engineering sequence is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
 ## Winning-demo strategy
 
-The build is centered on one memorable, trustworthy story: a judge switches to Nepali, finds a real Pokhara Ward 8 Jalpa Marg road record, opens the FY 2077/78 allocation, tender, addendum, and audit citations, sees that a tender estimate is not a contract award or payment, asks where the money went, and receives an evidence-bounded answer. Later accountability phases add mock citizen verification and duplicate-safe ratings without weakening this source-first story.
+The build is centered on one memorable, trustworthy story: a judge switches to Nepali, finds a real Pokhara Ward 8 Jalpa Marg road record, opens the FY 2077/78 allocation, tender, addendum, and audit citations, sees that a tender estimate is not a contract award or payment, asks where the money went, and receives an evidence-bounded answer. The judge can then inspect the exact anomaly rules and complete a mock verification flow before submitting one duplicate-safe project rating.
 
 This keeps the strongest differentiators connected:
 
@@ -60,10 +60,11 @@ cd codefest-2026-Die_Vordenker
 
 python -m venv backend\.venv
 backend\.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item backend\.env.example backend\.env
+backend\.venv\Scripts\python.exe scripts\bootstrap_local_security.py
 
 backend\.venv\Scripts\python.exe backend\manage.py migrate
 backend\.venv\Scripts\python.exe backend\manage.py seed_demo_data
+backend\.venv\Scripts\python.exe backend\manage.py detect_anomalies
 backend\.venv\Scripts\python.exe backend\manage.py runserver
 ```
 
@@ -74,10 +75,11 @@ PowerShell may block the `npm.ps1` shim on some Windows machines. Use `npm.cmd` 
 ```bash
 python3 -m venv backend/.venv
 backend/.venv/bin/python -m pip install -r requirements.txt
-cp backend/.env.example backend/.env
+backend/.venv/bin/python scripts/bootstrap_local_security.py
 
 backend/.venv/bin/python backend/manage.py migrate
 backend/.venv/bin/python backend/manage.py seed_demo_data
+backend/.venv/bin/python backend/manage.py detect_anomalies
 backend/.venv/bin/python backend/manage.py runserver
 ```
 
@@ -90,7 +92,16 @@ Copy-Item .env.example .env
 npm.cmd run dev
 ```
 
-The app runs at `http://localhost:5173`; the backend runs at `http://localhost:8000`. API documentation is available at `http://localhost:8000/api/docs/` and the health endpoint is `http://localhost:8000/api/v1/health/`.
+Start the mock identity provider in a separate terminal:
+
+```powershell
+cd mock-identity-server
+..\backend\.venv\Scripts\python.exe manage.py runserver 8001
+```
+
+The app runs at `http://localhost:5173`; the backend runs at `http://localhost:8000`; and the mock identity provider runs at `http://localhost:8001`. API documentation is available at `http://localhost:8000/api/docs/` and the health endpoint is `http://localhost:8000/api/v1/health/`.
+
+`scripts/bootstrap_local_security.py` generates the Django secrets, a separate client secret, the citizen HMAC secret, and a 3072-bit RSA signing key pair in ignored local files. Teammates should run it locally; private keys and `.env` contents must never be pasted into chat or committed. The committed verification identities are fictional demo records. Use phone `9800000001`, citizenship number `TEST-PKR-0001`, and demo OTP `123456` for the Ward 8 acceptance flow.
 
 ## Quality gates
 
@@ -225,6 +236,7 @@ The Jalpa project page now contains an evidence-grounded civic investigator. Its
 ```text
 DATABASE_QUERY
 DOCUMENT_RAG
+ANOMALY_EXPLANATION
 PROJECT_INVESTIGATION
 GENERAL_HELP
 INSUFFICIENT_EVIDENCE
@@ -308,9 +320,55 @@ No dependency or API key was added for this phase. The slice reuses Django filte
 
 Current verified gates: 43 backend tests in both Django and Pytest, 11 frontend tests, Ruff lint/format, frontend lint, production build, migration drift check, dependency integrity, and warning-free OpenAPI generation.
 
+## Phase 4 verification
+
+The accountability slice adds a privacy-conscious citizen path and evidence-led review indicators without changing the public-read experience:
+
+- Django server sessions and CSRF protection handle registration, login, logout, and account state; authentication is distinct from identity verification;
+- the separate mock identity provider performs a fictional phone/citizenship match, optional demo OTP, one-time code exchange, and short-lived RS256 assertion;
+- the backend validates issuer, audience, signature, expiry, verified claims, and one-time token identifier before deriving a stable HMAC citizen key;
+- raw phone and citizenship values never enter Budget Darpan's application tables, responses, or audit records;
+- a database `UniqueConstraint` enforces one citizen feedback record per project, while idempotency keys make safe retries return the original result;
+- verified citizens can edit their original rating, with feedback revisions and sensitive changes recorded in privacy-safe audit logs;
+- public aggregates separate all citizens, verified citizens, and verified local residents;
+- deterministic anomaly rules expose their rule ID, version, severity, reliability, inputs, threshold, calculated values, possible explanations, recommendation, source references, and evaluation time;
+- the Jalpa evidence cluster surfaces missing award, payment, and progress evidence, the limited-reliability scope/amount gap, and the official audit review reference;
+- `ANOMALY_EXPLANATION` answers “Why is this project flagged?” from stored rule evidence and bypasses LLM generation;
+- English and Nepali account, verification, feedback, anomaly, loading, empty, and failure states are connected to the real API path.
+
+Phase 4 endpoints and pages:
+
+```text
+GET  /api/v1/auth/csrf/
+POST /api/v1/auth/register/
+POST /api/v1/auth/login/
+POST /api/v1/auth/logout/
+GET  /api/v1/auth/me/
+POST /api/v1/verification/complete/
+GET  /api/v1/feedback/summary/?project={project_id}
+POST /api/v1/feedback/
+PATCH /api/v1/feedback/{id}/
+GET  /api/v1/anomalies/?project__code=PKR-W08-JALPA-2077-78&status=active
+
+http://localhost:5173/login
+http://localhost:5173/verify
+http://localhost:5173/anomalies
+```
+
+Refresh deterministic anomaly records whenever structured project evidence changes:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe manage.py detect_anomalies
+```
+
+The live integration smoke test covers mock match → OTP → one-time code → signed assertion → verified citizen → first feedback → idempotent retry → duplicate rejection → edit. The hackathon prototype uses a mock identity provider to demonstrate one verified citizen, one accountable project rating.
+
+Current verified gates: 57 Django backend tests, 59 repository-wide Pytest tests including the mock provider, 2 dedicated mock-provider tests, 14 frontend tests, Ruff lint/format, frontend lint, production build, migration drift check, dependency integrity, warning-free OpenAPI generation, and the live signed verification/feedback smoke flow.
+
 ## Dependency policy
 
-The root `requirements.txt` installs the canonical `backend/requirements.txt`. Packages are pinned for reproducible judging builds and added only with the slice that uses and tests them. Never install project packages into the global Python environment.
+The root `requirements.txt` installs both pinned service manifests: `backend/requirements.txt` and `mock-identity-server/requirements.txt`. Packages are added only with the slice that uses and tests them. Never install project packages into the global Python environment.
 
 ## Data and evidence policy
 

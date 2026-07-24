@@ -24,10 +24,16 @@ vi.mock('recharts', () => ({
 
 vi.mock('./api/client', () => ({
   askInvestigator: vi.fn(),
+  completeVerification: vi.fn(),
+  confirmMockVerification: vi.fn(),
+  createFeedback: vi.fn(),
   getDocument: vi.fn(),
   getDocumentPage: vi.fn(),
   getDocuments: vi.fn(),
   getFiscalYears: vi.fn(),
+  getFeedbackSummary: vi.fn(),
+  getCurrentAccount: vi.fn(),
+  getAnomalies: vi.fn(),
   getHealth: vi.fn(),
   getLocalGovernments: vi.fn(),
   getProjectDiscoverySummary: vi.fn(),
@@ -35,11 +41,18 @@ vi.mock('./api/client', () => ({
   getProjectMoneyTrail: vi.fn(),
   getProjects: vi.fn(),
   getSectors: vi.fn(),
+  loginAccount: vi.fn(),
+  registerAccount: vi.fn(),
+  startMockVerification: vi.fn(),
+  updateFeedback: vi.fn(),
 }))
 
 import {
   getDocuments,
   getFiscalYears,
+  getFeedbackSummary,
+  getCurrentAccount,
+  getAnomalies,
   getHealth,
   getLocalGovernments,
   getProjectDiscoverySummary,
@@ -47,6 +60,9 @@ import {
   getProjectMoneyTrail,
   getProjects,
   getSectors,
+  startMockVerification,
+  confirmMockVerification,
+  completeVerification,
 } from './api/client'
 
 const moneyTrail = {
@@ -171,6 +187,15 @@ describe('Budget Darpan foundation', () => {
     await i18n.changeLanguage('en')
     document.documentElement.lang = 'en'
     getProjectEvidence.mockResolvedValue({ data: [] })
+    getCurrentAccount.mockResolvedValue({ data: { authenticated: false } })
+    getFeedbackSummary.mockResolvedValue({
+      data: {
+        all_citizens: { count: 0, average_completion: null },
+        verified_citizens: { count: 0, average_completion: null },
+        verified_local_residents: { count: 0, average_completion: null },
+      },
+    })
+    getAnomalies.mockResolvedValue({ data: [] })
     getProjects.mockResolvedValue({ data: discoveryProjects })
     getProjectDiscoverySummary.mockResolvedValue(discoverySummary)
     getLocalGovernments.mockResolvedValue({
@@ -420,5 +445,55 @@ describe('Budget Darpan foundation', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.queryByTestId('project-map')).not.toBeInTheDocument()
+  })
+
+  it('shows deterministic anomaly explanations without accusation language', async () => {
+    window.history.replaceState({}, '', '/anomalies')
+    getAnomalies.mockResolvedValue({
+      data: [{
+        id: 'flag-1',
+        project: '6f3ef140-e6b9-4d6b-915f-74080c804208',
+        rule_id: 'LINKED_SCOPE_AMOUNT_GAP',
+        severity: 'medium',
+        reliability: 'limited',
+        title_en: 'Linked allocation and tender estimate differ substantially',
+        title_np: 'जोडिएको विनियोजन र बोलपत्र अनुमानमा ठूलो अन्तर छ',
+        reason_en: 'The records may cover different scopes or packages.',
+        reason_np: 'अभिलेखले फरक कार्यक्षेत्र समेट्न सक्छ।',
+        data_used: { allocated_amount: '800000.00' },
+        threshold: { ratio_min: '2.00' },
+        calculated_values: { ratio: '11.85' },
+        possible_explanations: [{
+          en: 'The budget line may fund only part of a larger tender.',
+          np: 'बजेट शीर्षकले ठूलो बोलपत्रको केही भाग मात्र वित्तपोषण गरेको हुन सक्छ।',
+        }],
+        recommendation_en: 'Verify project scope before comparison.',
+        recommendation_np: 'तुलनाअघि कार्यक्षेत्र प्रमाणित गर्नुहोस्।',
+        source_references: [],
+      }],
+    })
+    render(<App />)
+
+    expect(await screen.findByText('Linked allocation and tender estimate differ substantially')).toBeInTheDocument()
+    expect(screen.getByText('{"ratio_min":"2.00"}')).toBeInTheDocument()
+    expect(screen.getByText(/does not accuse/i)).toBeInTheDocument()
+    expect(screen.queryByText(/fraud detected/i)).not.toBeInTheDocument()
+  })
+
+  it('completes the browser side of the mock one-time-code verification flow', async () => {
+    window.history.replaceState({}, '', '/verify')
+    getCurrentAccount.mockResolvedValue({ data: { authenticated: true, identity_verified: false } })
+    startMockVerification.mockResolvedValue({ data: { challenge_id: 'challenge-1', demo_otp: '123456' } })
+    confirmMockVerification.mockResolvedValue({ data: { code: 'one-time-code-value-1234' } })
+    completeVerification.mockResolvedValue({ data: { username: 'citizen', identity_verified: true } })
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(await screen.findByLabelText('Demo phone number'), '9800000001')
+    await user.type(screen.getByLabelText('Demo citizenship number'), 'TEST-PKR-0001')
+    await user.click(screen.getByRole('button', { name: 'Match demo identity' }))
+    expect(await screen.findByDisplayValue('123456')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Confirm verification' }))
+    expect(await screen.findByText('Mock verification completed')).toBeInTheDocument()
   })
 })

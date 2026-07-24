@@ -4,7 +4,7 @@
 > **Theme**: Local government budget transparency for Nepal
 > **Duration**: 60 hours
 
-> **Current implementation note (24 July 2026):** `README.md` is the authoritative build status and `AGENTS.md` is the local engineering contract. The later sections of this document preserve early product exploration; their illustrative municipalities and figures are not official data and must not be seeded or presented as facts. Phase 3A uses review-gated page chunks, hybrid Chroma/BM25-style retrieval, a direct typed provider layer, and the exact Ollama tag `qwen2.5:3b` rather than LangChain. Phase 3B reuses the relational project API for shareable bilingual discovery, filter-aware aggregates, comparison, and source-backed mapping without seeding invented locations or missing financial values.
+> **Current implementation note (24 July 2026):** `README.md` is the authoritative build status and `AGENTS.md` is the local engineering contract. The later sections of this document preserve early product exploration; their illustrative municipalities and figures are not official data and must not be seeded or presented as facts. Phase 3A uses review-gated page chunks, hybrid Chroma/BM25-style retrieval, a direct typed provider layer, and the exact Ollama tag `qwen2.5:3b` rather than LangChain. Phase 3B reuses the relational project API for shareable bilingual discovery, filter-aware aggregates, comparison, and source-backed mapping without seeding invented locations or missing financial values. Phase 4 uses secure Django sessions, a separately signed mock identity flow, HMAC-pseudonymous citizen keys, database-enforced feedback uniqueness, privacy-safe audit records, and deterministic anomaly explanations. Phase 5 demo hardening is next.
 
 ---
 

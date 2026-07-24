@@ -54,6 +54,10 @@ INSTALLED_APPS = [
     "documents",
     "rag",
     "investigator",
+    "audit",
+    "accounts",
+    "feedback",
+    "anomalies",
 ]
 
 MIDDLEWARE = [
@@ -126,6 +130,15 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "http://localhost:5173")
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_AGE = int(os.getenv("SESSION_COOKIE_AGE", "14400"))
+SESSION_SAVE_EVERY_REQUEST = True
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -138,6 +151,9 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "config.exceptions.api_exception_handler",
     "DEFAULT_THROTTLE_RATES": {"investigator": "30/hour"},
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
 }
 
 SPECTACULAR_SETTINGS = {
@@ -190,4 +206,31 @@ CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "budget-darpan-evidence").str
 chroma_db_dir = Path(os.getenv("CHROMA_DB_DIR", "../chroma_db"))
 CHROMA_DB_DIR = (
     chroma_db_dir if chroma_db_dir.is_absolute() else (BASE_DIR / chroma_db_dir).resolve()
+)
+
+MOCK_IDENTITY_SERVER_URL = os.getenv(
+    "MOCK_IDENTITY_SERVER_URL",
+    "http://localhost:8001",
+).strip()
+MOCK_IDENTITY_CLIENT_SECRET = os.getenv("MOCK_IDENTITY_CLIENT_SECRET", "").strip()
+MOCK_IDENTITY_ISSUER = os.getenv(
+    "MOCK_IDENTITY_ISSUER",
+    "budget-darpan-mock-id",
+).strip()
+MOCK_IDENTITY_AUDIENCE = os.getenv(
+    "MOCK_IDENTITY_AUDIENCE",
+    "budget-darpan-api",
+).strip()
+MOCK_IDENTITY_TIMEOUT_SECONDS = int(os.getenv("MOCK_IDENTITY_TIMEOUT_SECONDS", "5"))
+CITIZEN_HASH_SECRET = os.getenv("CITIZEN_HASH_SECRET", "").strip()
+mock_identity_public_key_path = Path(
+    os.getenv(
+        "MOCK_IDENTITY_PUBLIC_KEY_PATH",
+        "../mock-identity-server/keys/public.pem",
+    )
+)
+MOCK_IDENTITY_PUBLIC_KEY_PATH = (
+    mock_identity_public_key_path
+    if mock_identity_public_key_path.is_absolute()
+    else (BASE_DIR / mock_identity_public_key_path).resolve()
 )

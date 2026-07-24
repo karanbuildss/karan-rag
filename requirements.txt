@@ -1,2 +1,3 @@
-# Convenience entry point for installs from the repository root.
+# Convenience entry point for all Python services from the repository root.
 -r backend/requirements.txt
+-r mock-identity-server/requirements.txt

@@ -32,6 +32,7 @@ class InvestigatorResultSerializer(serializers.Serializer):
     answer = serializers.CharField()
     project = serializers.DictField(allow_null=True)
     structured_facts = serializers.DictField(allow_null=True)
+    anomalies = serializers.ListField(child=serializers.DictField())
     citations = serializers.ListField(child=serializers.DictField())
     limitations = serializers.ListField(child=serializers.DictField())
     provenance = serializers.DictField()

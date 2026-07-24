@@ -4,6 +4,16 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
   headers: { Accept: 'application/json' },
   timeout: 5000,
+  withCredentials: true,
+  withXSRFToken: true,
+  xsrfCookieName: 'csrftoken',
+  xsrfHeaderName: 'X-CSRFToken',
+})
+
+const mockIdentityApi = axios.create({
+  baseURL: import.meta.env.VITE_MOCK_IDENTITY_URL || 'http://localhost:8001/api/v1',
+  headers: { Accept: 'application/json' },
+  timeout: 5000,
 })
 
 export async function getHealth() {
@@ -38,6 +48,70 @@ export async function getFiscalYears(params = {}) {
 
 export async function getSectors(params = {}) {
   const response = await api.get('/sectors/', { params })
+  return response.data
+}
+
+export async function getCsrfToken() {
+  const response = await api.get('/auth/csrf/')
+  return response.data
+}
+
+export async function registerAccount(payload) {
+  await getCsrfToken()
+  const response = await api.post('/auth/register/', payload)
+  return response.data
+}
+
+export async function loginAccount(payload) {
+  await getCsrfToken()
+  const response = await api.post('/auth/login/', payload)
+  return response.data
+}
+
+export async function logoutAccount() {
+  const response = await api.post('/auth/logout/')
+  return response.data
+}
+
+export async function getCurrentAccount() {
+  const response = await api.get('/auth/me/')
+  return response.data
+}
+
+export async function startMockVerification(payload) {
+  const response = await mockIdentityApi.post('/verification/start/', payload)
+  return response.data
+}
+
+export async function confirmMockVerification(payload) {
+  const response = await mockIdentityApi.post('/verification/confirm/', payload)
+  return response.data
+}
+
+export async function completeVerification(code) {
+  const response = await api.post('/verification/complete/', { code })
+  return response.data
+}
+
+export async function getAnomalies(params = {}) {
+  const response = await api.get('/anomalies/', { params })
+  return response.data
+}
+
+export async function getFeedbackSummary(projectId) {
+  const response = await api.get('/feedback/summary/', { params: { project: projectId } })
+  return response.data
+}
+
+export async function createFeedback(payload, idempotencyKey) {
+  const response = await api.post('/feedback/', payload, {
+    headers: { 'Idempotency-Key': idempotencyKey },
+  })
+  return response.data
+}
+
+export async function updateFeedback(feedbackId, payload) {
+  const response = await api.patch(`/feedback/${feedbackId}/`, payload)
   return response.data
 }
 

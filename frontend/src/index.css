@@ -430,7 +430,8 @@
   }
 
   .filter-field input,
-  .filter-field select {
+  .filter-field select,
+  .filter-field textarea {
     min-height: 2.8rem;
     width: 100%;
     border: 1px solid var(--color-line);
@@ -443,7 +444,8 @@
   }
 
   .filter-field input:focus,
-  .filter-field select:focus {
+  .filter-field select:focus,
+  .filter-field textarea:focus {
     border-color: var(--color-teal);
     outline: 2px solid rgba(25, 106, 96, 0.16);
   }
@@ -556,6 +558,52 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+  }
+
+  .account-card,
+  .anomaly-card {
+    border: 1px solid var(--color-line);
+    border-radius: 0.7rem;
+    background: white;
+    padding: 1.4rem;
+  }
+
+  .anomaly-severity {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  .anomaly-info,
+  .anomaly-low {
+    background: #e8f2f4;
+    color: #245d67;
+  }
+
+  .anomaly-medium {
+    background: #fff2d8;
+    color: #805016;
+  }
+
+  .anomaly-high {
+    background: #fde8e5;
+    color: #8b362f;
+  }
+
+  .anomaly-card dt {
+    color: var(--color-muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .anomaly-card dd {
+    margin: 0.45rem 0 0;
+    overflow-wrap: anywhere;
+    color: var(--color-ink);
   }
 
   .document-viewer-grid {

@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from anomalies.services import evaluate_project
 from budgets.management.commands.seed_demo_data import DEMO_PROJECT_ID
 from django.core.management import call_command
 from django.test import TestCase, override_settings
@@ -128,6 +129,26 @@ class InvestigatorApiTests(TestCase):
         self.assertIn("Two NPR 690000 rows require review", data["answer"])
         self.assertEqual(data["citations"][0]["relationship"], "audit")
         self.assertEqual(data["citations"][0]["page"], 48)
+
+    def test_flag_question_uses_explainable_deterministic_anomalies(self):
+        evaluate_project(self.project)
+
+        response = self.ask("Why is this project flagged?")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()["data"]
+        self.assertEqual(data["route"], "ANOMALY_EXPLANATION")
+        self.assertEqual(data["provenance"]["anomaly_analysis"], "deterministic_rules")
+        self.assertEqual(
+            data["provenance"]["document_retrieval"],
+            "deterministic_anomaly_sources",
+        )
+        self.assertTrue(data["anomalies"])
+        self.assertTrue(data["citations"])
+        self.assertIn("review signals", data["answer"])
+        self.assertNotIn("fraud", data["answer"].casefold())
+        self.assertNotIn("corruption", data["answer"].casefold())
+        self.assertTrue(data["anomalies"][0]["threshold"])
 
     def test_missing_project_context_returns_insufficient_evidence(self):
         response = self.client.post(

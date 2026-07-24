@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "mock-government-identity-001",
+    "phone": "9800000001",
+    "citizenship_number": "TEST-PKR-0001",
+    "municipality_code": "PKR",
+    "ward_number": 8
+  },
+  {
+    "subject": "mock-government-identity-002",
+    "phone": "9800000002",
+    "citizenship_number": "TEST-PKR-0002",
+    "municipality_code": "PKR",
+    "ward_number": 5
+  }
+]

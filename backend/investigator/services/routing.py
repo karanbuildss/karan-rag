@@ -5,6 +5,7 @@ from enum import StrEnum
 class InvestigationRoute(StrEnum):
     DATABASE_QUERY = "DATABASE_QUERY"
     DOCUMENT_RAG = "DOCUMENT_RAG"
+    ANOMALY_EXPLANATION = "ANOMALY_EXPLANATION"
     PROJECT_INVESTIGATION = "PROJECT_INVESTIGATION"
     GENERAL_HELP = "GENERAL_HELP"
     INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
@@ -70,6 +71,22 @@ def route_question(question, *, has_project):
     )
     if _contains(text, money_journey):
         return InvestigationRoute.PROJECT_INVESTIGATION
+
+    anomaly_terms = (
+        "why flagged",
+        "why is this flagged",
+        "anomaly",
+        "unusual pattern",
+        "review recommended",
+        "flagged",
+        "kina flag",
+        "kina flagged",
+        "सङ्गति",
+        "असामान्य",
+        "किन चिन्ह",
+    )
+    if _contains(text, anomaly_terms):
+        return InvestigationRoute.ANOMALY_EXPLANATION
 
     document_terms = (
         "audit",

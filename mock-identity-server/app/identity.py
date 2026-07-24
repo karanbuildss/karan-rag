@@ -21,6 +21,12 @@ def _identities():
     return json.loads(settings.SEEDED_IDENTITIES_PATH.read_text(encoding="utf-8"))
 
 
+def _private_key():
+    if settings.IDENTITY_PRIVATE_KEY:
+        return settings.IDENTITY_PRIVATE_KEY
+    return settings.IDENTITY_PRIVATE_KEY_PATH.read_text(encoding="utf-8")
+
+
 def start_verification(phone, citizenship_number):
     identity = next(
         (
@@ -78,7 +84,7 @@ def exchange_code(code):
         "iat": now,
         "exp": now + settings.IDENTITY_ASSERTION_SECONDS,
     }
-    private_key = settings.IDENTITY_PRIVATE_KEY_PATH.read_text(encoding="utf-8")
+    private_key = _private_key()
     return jwt.encode(
         claims,
         private_key,
@@ -91,7 +97,7 @@ def public_jwk():
     from cryptography.hazmat.primitives import serialization
 
     private_key = serialization.load_pem_private_key(
-        settings.IDENTITY_PRIVATE_KEY_PATH.read_bytes(),
+        _private_key().encode("utf-8"),
         password=None,
     )
     public_key = private_key.public_key()

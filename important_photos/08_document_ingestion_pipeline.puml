@@ -1,0 +1,52 @@
+@startuml BudgetDarpanDocumentIngestion
+!include _theme.puml
+title Budget Darpan — Document Ingestion and OCR Pipeline
+caption Original files are preserved; only accepted page text is indexed
+
+start
+:Register source from datasets/manifest.csv;
+:Create SourceDocument with municipality,\nfiscal year, type, language and source URL;
+:Save original file and SHA-256;
+
+repeat
+  :Open next page with PyMuPDF;
+  :Try embedded text extraction;
+  if (Usable text layer?) then (yes)
+    :Store embedded text;
+    :Calculate text quality score;
+  else (no)
+    :Render page through Poppler;
+    :OCR with Tesseract nep+eng;
+    :Store OCR confidence and warnings;
+  endif
+
+  if (Quality above acceptance threshold?) then (yes)
+    :Mark page AUTO_ACCEPTED;
+  else (no)
+    :Mark page REVIEW_REQUIRED;
+  endif
+  :Preserve page number, section, method,\ncharacter count and extraction metadata;
+repeat while (More pages?) is (yes)
+
+:Complete DataExtractionRecord;
+if (Important page approved/accepted?) then (yes)
+  :Create overlapping page-level chunks;
+  :Attach project relationship and page range;
+  :Generate multilingual document embedding;
+  :Upsert to configured vector provider;
+else (no)
+  :Keep original for human review;
+  :Do not index rejected/pending evidence;
+endif
+
+:Document becomes available through\nsource library and citation viewer;
+stop
+
+note right
+  Failure behavior:
+  • preserve original file
+  • mark extraction failed
+  • show understandable status
+  • never flatten the PDF into anonymous text
+end note
+@enduml

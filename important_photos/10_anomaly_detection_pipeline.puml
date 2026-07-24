@@ -1,0 +1,74 @@
+@startuml BudgetDarpanAnomalyPipeline
+!include _theme.puml
+title Budget Darpan — Explainable Anomaly Detection
+caption Deterministic review indicators; never an automatic corruption accusation
+left to right direction
+
+database "Structured Project Data" as ProjectDB {
+  rectangle "Allocation" as Allocation
+  rectangle "Contract award" as Award
+  rectangle "Payments" as Payments
+  rectangle "Milestones" as Milestones
+  rectangle "Official progress" as Progress
+  rectangle "Verified feedback" as Feedback
+  rectangle "Document coverage" as Coverage
+}
+
+component "Rule Engine" as Engine TEAL
+
+package "Versioned Deterministic Rules" BLUESOFT {
+  rectangle "Overspending /\nsevere underspending" as R1
+  rectangle "Payment–progress\nmismatch" as R2
+  rectangle "Payment before\nrecorded milestone" as R3
+  rectangle "Completed but missing\nsupporting evidence" as R4
+  rectangle "Repeated contractor\naward pattern" as R5
+  rectangle "Official–citizen\ncompletion mismatch" as R6
+  rectangle "Evidence gap /\nunknown money stage" as R7
+}
+
+database "AnomalyFlag" as Flag {
+  rectangle "rule_id + version" as F1
+  rectangle "severity + reliability" as F2
+  rectangle "reason + data_used" as F3
+  rectangle "threshold + calculated_values" as F4
+  rectangle "possible_explanations" as F5
+  rectangle "recommendation + sources" as F6
+}
+
+component "Bilingual Explanation API" as Explain
+rectangle "Judge / Citizen View\nWhy was this flagged?" as UI #E8F4F1
+
+ProjectDB --> Engine : nullable evidence-aware inputs
+Engine --> R1
+Engine --> R2
+Engine --> R3
+Engine --> R4
+Engine --> R5
+Engine --> R6
+Engine --> R7
+R1 --> Flag
+R2 --> Flag
+R3 --> Flag
+R4 --> Flag
+R5 --> Flag
+R6 --> Flag
+R7 --> Flag
+Flag --> Explain
+Explain --> UI
+
+note bottom of Engine
+  Missing payment information is Unknown,
+  so it cannot be treated as NPR 0 or overspending.
+end note
+
+note bottom of UI
+  Approved vocabulary:
+  anomaly · inconsistency · unusual pattern
+  missing evidence · review recommended · possible mismatch
+end note
+
+legend bottom
+  Budget Darpan does not accuse.
+  It identifies patterns and evidence that may require further review.
+endlegend
+@enduml

@@ -101,3 +101,13 @@ class MockVerificationFlowTests(SimpleTestCase):
         )
         self.assertEqual(invalid_identity.status_code, 400)
         self.assertNotIn("phone", str(invalid_identity.json()).lower())
+
+    def test_environment_private_key_takes_precedence_over_file(self):
+        from app.identity import public_jwk
+
+        private_key = self.private_path.read_text(encoding="utf-8")
+        with override_settings(
+            IDENTITY_PRIVATE_KEY=private_key,
+            IDENTITY_PRIVATE_KEY_PATH=Path(self.temp_dir.name) / "missing-private-key.pem",
+        ):
+            self.assertEqual(public_jwk()["alg"], "RS256")

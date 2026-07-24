@@ -1,0 +1,80 @@
+services:
+  - type: web
+    name: budget-darpan-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt && python backend/manage.py collectstatic --noinput
+    startCommand: bash scripts/start_backend_production.sh
+    healthCheckPath: /api/v1/health/
+    autoDeployTrigger: commit
+    envVars:
+      - key: BUDGET_DARPAN_DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: PUBLIC_API_BASE_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SECURE_HSTS_SECONDS
+        value: "3600"
+      - key: MOCK_IDENTITY_SERVER_URL
+        sync: false
+      - key: MOCK_IDENTITY_CLIENT_SECRET
+        sync: false
+      - key: MOCK_IDENTITY_PUBLIC_KEY
+        sync: false
+      - key: CITIZEN_HASH_SECRET
+        sync: false
+      - key: VECTOR_DB_PROVIDER
+        value: chroma
+      - key: INVESTIGATOR_ENABLE_GENERATION
+        value: "False"
+      - key: PINECONE_INDEX
+        value: budget-darpan
+      - key: PINECONE_NAMESPACE
+        value: public-budget-documents
+
+  - type: web
+    name: budget-darpan-identity
+    runtime: python
+    plan: free
+    buildCommand: pip install -r mock-identity-server/requirements.txt
+    startCommand: bash scripts/start_identity_production.sh
+    healthCheckPath: /api/v1/health/
+    autoDeployTrigger: commit
+    envVars:
+      - key: IDENTITY_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CORS_ALLOWED_ORIGIN
+        sync: false
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SECURE_HSTS_SECONDS
+        value: "3600"
+      - key: IDENTITY_CLIENT_SECRET
+        sync: false
+      - key: IDENTITY_PRIVATE_KEY
+        sync: false
+      - key: IDENTITY_ISSUER
+        value: budget-darpan-mock-id
+      - key: IDENTITY_AUDIENCE
+        value: budget-darpan-api
+      - key: IDENTITY_KEY_ID
+        value: budget-darpan-demo-1
+      - key: EXPOSE_DEMO_OTP
+        value: "True"
+      - key: DEMO_OTP
+        sync: false

@@ -1,0 +1,69 @@
+@startuml BudgetDarpanEndToEndFlow
+!include _theme.puml
+title Budget Darpan — End-to-End System Flow
+caption From public evidence to an accountable citizen action
+
+start
+:Open Budget Darpan;
+:Select language, municipality,\nward, fiscal year, sector or project;
+:Load structured project overview;
+
+fork
+  :Render allocation, award, payment,\nprogress and evidence coverage;
+fork again
+  :Render chart and project map\nwhen values/coordinates exist;
+fork again
+  :Show Unknown / Not reported\nfor missing evidence;
+end fork
+
+if (Ask an investigator question?) then (yes)
+  :Accept typed or editable voice transcript;
+  :Detect English, Devanagari Nepali\nor Romanized Nepali;
+  :Route question intent;
+  if (Exact structured fact?) then (yes)
+    :Query relational database;
+  elseif (Document claim?) then (yes)
+    :Retrieve project-filtered\naccepted document chunks;
+  elseif (Anomaly question?) then (yes)
+    :Read deterministic rule, values,\nthreshold and source references;
+  else (combined investigation)
+    :Combine database facts, timeline,\nretrieved evidence and citizen aggregate;
+  endif
+  if (Enough reliable evidence?) then (yes)
+    :Compose answer in user's language;
+    :Return citations and structured\nchart instructions;
+  else (no)
+    :State insufficient evidence honestly;
+  endif
+  :User opens cited document page;
+endif
+
+if (Submit citizen feedback?) then (yes)
+  if (Authenticated?) then (yes)
+  else (no)
+    :Register or sign in;
+  endif
+  if (Identity verified?) then (yes)
+  else (no)
+    :Complete fictional phone + citizenship\n+ OTP verification flow;
+    :Backend verifies RS256 assertion;
+  endif
+  :Derive stable privacy-preserving citizen key;
+  if (Feedback already exists?) then (yes)
+    :Reject duplicate or allow edit\nof original rating;
+  else (no)
+    :Store one verified rating\nfor citizen + project;
+  endif
+endif
+
+:Record sensitive changes in audit log;
+stop
+
+legend right
+  |= Principle |= Behavior |
+  | Public by default | Browse without login |
+  | Evidence first | Claims keep provenance |
+  | Privacy | No raw citizenship in Budget Darpan |
+  | Safety | Anomaly is not proven corruption |
+endlegend
+@enduml

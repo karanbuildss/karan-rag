@@ -323,7 +323,7 @@ describe('Budget Darpan foundation', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent('Local API connected')
+      expect(screen.getByRole('status')).toHaveTextContent('Evidence services connected')
     })
   })
 
@@ -333,7 +333,7 @@ describe('Budget Darpan foundation', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(
-        'API unavailable · browsing fallback remains',
+        'Evidence services unavailable · try again shortly',
       )
     })
   })

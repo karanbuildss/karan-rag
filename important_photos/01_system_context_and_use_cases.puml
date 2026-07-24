@@ -1,0 +1,60 @@
+@startuml BudgetDarpanSystemContext
+!include _theme.puml
+title Budget Darpan — System Context and Core Use Cases
+caption AI-powered civic transparency with traceable public evidence
+left to right direction
+
+actor Citizen
+actor "Verified Citizen" as Verified
+actor "Municipal Official" as Official
+actor "Journalist / Researcher" as Researcher
+actor "Moderator / Admin" as Admin
+
+rectangle "Budget Darpan" as System #E8F4F1 {
+  usecase "Explore budgets\nand projects" as UC1
+  usecase "Follow project\nmoney trail" as UC2
+  usecase "Ask in English, Nepali\nor Romanized Nepali" as UC3
+  usecase "Open cited document\nand page" as UC4
+  usecase "Inspect maps\nand charts" as UC5
+  usecase "Understand anomaly\nreason and threshold" as UC6
+  usecase "Verify identity\nwith mock provider" as UC7
+  usecase "Submit or edit one\nproject rating" as UC8
+  usecase "Review OCR and\nmoderate evidence" as UC9
+}
+
+cloud "Official public sources\nMunicipal sites · OAG · e-GP" as Sources BLUESOFT
+rectangle "Mock identity provider\nNot official Nagarik App" as MockID #FFF1C5
+
+Citizen --> UC1
+Citizen --> UC2
+Citizen --> UC3
+Citizen --> UC4
+Citizen --> UC5
+Citizen --> UC6
+Verified --> UC7
+Verified --> UC8
+Researcher --> UC1
+Researcher --> UC3
+Researcher --> UC4
+Official --> UC2
+Official --> UC6
+Admin --> UC9
+
+Sources --> System : budget, audit, tender,\nprogress and payment evidence
+UC7 --> MockID : signed demo assertion
+UC8 .> UC7 : requires verification
+UC3 .> UC4 : cited claims
+
+note bottom of System
+  Public inspection requires no login.
+  Exact money comes from structured data.
+  Missing evidence stays Unknown, never zero.
+end note
+
+legend right
+  |= Trust boundary |= Meaning |
+  | Official source | Government-published evidence |
+  | Mock identity | Hackathon security demonstration |
+  | AI answer | Evidence-bounded, not an accusation |
+endlegend
+@enduml

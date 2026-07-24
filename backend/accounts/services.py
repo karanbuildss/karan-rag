@@ -52,6 +52,8 @@ def _exchange_code(code):
 
 
 def _public_key():
+    if settings.MOCK_IDENTITY_PUBLIC_KEY:
+        return settings.MOCK_IDENTITY_PUBLIC_KEY
     path = Path(settings.MOCK_IDENTITY_PUBLIC_KEY_PATH)
     try:
         return path.read_text(encoding="utf-8")

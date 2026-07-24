@@ -1,0 +1,69 @@
+@startuml BudgetDarpanMethodology
+!include _theme.puml
+title Budget Darpan — Development Methodology
+caption Evidence-first agile delivery through complete vertical slices
+left to right direction
+
+rectangle "1. Discover" as Discover BLUESOFT {
+  rectangle "Define civic problem" as D1
+  rectangle "Study source portals" as D2
+  rectangle "Identify trust risks" as D3
+}
+
+rectangle "2. Design" as Design TEAL {
+  rectangle "Normalize relational model" as DS1
+  rectangle "Define API and provenance" as DS2
+  rectangle "Design bilingual UX" as DS3
+}
+
+rectangle "3. Build a Vertical Slice" as Build PURPLESOFT {
+  rectangle "Working model" as B1
+  rectangle "Working API" as B2
+  rectangle "Working UI" as B3
+  rectangle "Tests + demo integration" as B4
+}
+
+rectangle "4. Verify" as Verify #FFF1C5 {
+  rectangle "Constraints and permissions" as V1
+  rectangle "Citations and unknown states" as V2
+  rectangle "Bilingual / accessibility checks" as V3
+  rectangle "Regression and live smoke tests" as V4
+}
+
+rectangle "5. Review and Improve" as Improve #E8F4F1 {
+  rectangle "Team review" as I1
+  rectangle "Judge-critical feedback" as I2
+  rectangle "Document limitations" as I3
+  rectangle "Select next P0 slice" as I4
+}
+
+Discover --> Design
+Design --> Build
+Build --> Verify
+Verify --> Improve
+Improve -up-> Discover : next iteration
+
+D1 --> D2
+D2 --> D3
+DS1 --> DS2
+DS2 --> DS3
+B1 --> B2
+B2 --> B3
+B3 --> B4
+V1 --> V2
+V2 --> V3
+V3 --> V4
+I1 --> I2
+I2 --> I3
+I3 --> I4
+
+note bottom
+  Priority order: data correctness → privacy/security → source traceability
+  → demo-critical path → simplest professional implementation.
+end note
+
+legend bottom
+  Each phase is complete only when model → API → UI → tests → demo work together.
+  P0 stability comes before optional P1/P2 features.
+endlegend
+@enduml

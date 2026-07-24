@@ -1,0 +1,94 @@
+@startuml BudgetDarpanArchitecture
+!include _theme.puml
+title Budget Darpan — Overall System Architecture
+caption Working local architecture with cloud-ready provider boundaries
+left to right direction
+
+actor "Citizen / Judge / Official" as User
+
+package "Presentation Layer" BLUESOFT {
+  component "React 18 + Vite" as React
+  component "react-i18next\nEnglish / Nepali" as I18n
+  component "Recharts" as Charts
+  component "Leaflet + OSM" as Maps
+  component "Web Speech API\nen-US / ne-NP" as Voice
+}
+
+package "Application and API Layer" TEAL {
+  component "Django 5.2 + DRF\n/api/v1" as API
+  component "Authentication + RBAC\nCSRF sessions" as Auth
+  component "Money Trail Selectors" as MoneyTrail
+  component "Investigator Router" as Router
+  component "Evidence Composer" as Composer
+  component "Document Review API" as Review
+  component "Feedback Service" as Feedback
+  component "Explainable Anomaly Engine" as Anomaly
+  component "Audit Logging" as Audit
+}
+
+package "Evidence and AI Layer" PURPLESOFT {
+  component "PyMuPDF" as MuPDF
+  component "Tesseract nep+eng\n+ Poppler" as OCR
+  component "Chunking + Metadata" as Chunking
+  component "Ollama Embeddings\nnomic-embed-text-v2-moe" as Embed
+  component "Optional Ollama Chat\nqwen2.5:3b" as Qwen
+  component "Hybrid Retrieval\nsemantic + lexical" as Hybrid
+}
+
+database "Relational DB\nSQLite local\nPostgreSQL deployment" as SQL
+database "ChromaDB\nlocal fallback" as Chroma
+cloud "Pinecone\noptional vector provider" as Pinecone #E8F4F1
+folder "Original PDFs / Images\npage-preserving media" as Files
+component "Mock Identity Server\nRS256 + OTP + JWKS" as MockID #FFF1C5
+
+User --> React : HTTPS / browser
+React --> I18n
+React --> Charts
+React --> Maps
+React --> Voice
+React --> API : JSON + session cookie
+
+API --> Auth
+API --> MoneyTrail
+API --> Router
+API --> Review
+API --> Feedback
+API --> Anomaly
+API --> Audit
+Auth --> MockID : backend code exchange
+
+MoneyTrail --> SQL
+Feedback --> SQL
+Anomaly --> SQL
+Review --> SQL
+Audit --> SQL
+Router --> MoneyTrail : exact facts
+Router --> Hybrid : document evidence
+Router --> Anomaly : explanation route
+Router --> Composer
+Composer --> Qwen : optional bounded wording
+
+Review --> Files
+Files --> MuPDF
+MuPDF --> OCR : only pages needing OCR
+MuPDF --> Chunking
+OCR --> Chunking
+Chunking --> SQL : DocumentPage + DocumentChunk
+Chunking --> Embed
+Embed --> Chroma
+Embed --> Pinecone
+Hybrid --> Chroma
+Hybrid --> Pinecone
+Hybrid --> Embed : query embedding
+
+note bottom of Router
+  DATABASE_QUERY · DOCUMENT_RAG · ANOMALY_EXPLANATION
+  PROJECT_INVESTIGATION · GENERAL_HELP · INSUFFICIENT_EVIDENCE
+end note
+
+note bottom of Qwen
+  The LLM may improve wording.
+  It cannot invent official money, dates,
+  contractors, or unsupported claims.
+end note
+@enduml

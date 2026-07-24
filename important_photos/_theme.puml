@@ -1,0 +1,74 @@
+' Shared Budget Darpan PlantUML style. This is an include file, not a diagram.
+skinparam backgroundColor #FBFAF5
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam linetype ortho
+skinparam ArrowColor #315D59
+skinparam ArrowThickness 1.4
+skinparam NoteBackgroundColor #FFF6DA
+skinparam NoteBorderColor #D99B2B
+skinparam NoteFontColor #423C2E
+skinparam TitleFontColor #123F3B
+skinparam TitleFontSize 24
+skinparam CaptionFontColor #5D6967
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #7A918E
+  FontColor #163D39
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #39756D
+  FontColor #163D39
+}
+skinparam database {
+  BackgroundColor #E8F4F1
+  BorderColor #287368
+  FontColor #163D39
+}
+skinparam actor {
+  BackgroundColor #F4DFA8
+  BorderColor #9E6B12
+  FontColor #3B321F
+}
+skinparam usecase {
+  BackgroundColor #F4FAF8
+  BorderColor #39756D
+  FontColor #163D39
+}
+skinparam activity {
+  BackgroundColor #FFFFFF
+  BorderColor #39756D
+  FontColor #163D39
+  DiamondBackgroundColor #FFF1C5
+  DiamondBorderColor #B77A16
+}
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #39756D
+  FontColor #163D39
+  HeaderBackgroundColor #DDEFEA
+  AttributeFontColor #284B47
+}
+skinparam sequence {
+  ArrowColor #315D59
+  LifeLineBorderColor #5A7975
+  LifeLineBackgroundColor #F7FAF9
+  ParticipantBorderColor #39756D
+  ParticipantBackgroundColor #DDEFEA
+  ParticipantFontColor #163D39
+  ActorBorderColor #9E6B12
+  ActorBackgroundColor #F4DFA8
+}
+
+!define GREEN #167566
+!define TEAL #DDEFEA
+!define GOLD #D99B2B
+!define CREAM #FBFAF5
+!define REDSOFT #FCE8E5
+!define BLUESOFT #EAF2FA
+!define PURPLESOFT #F0EAF8

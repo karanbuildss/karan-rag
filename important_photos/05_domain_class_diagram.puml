@@ -1,0 +1,244 @@
+@startuml BudgetDarpanDomainModel
+!include _theme.puml
+title Budget Darpan — Core Domain Class Diagram
+caption Normalized relational model with evidence and accountability relationships
+hide methods
+hide circle
+top to bottom direction
+
+package "Geography and Budget" BLUESOFT {
+  class Province {
+    code: string <<unique>>
+    name_en: string
+    name_np: string
+  }
+  class District {
+    code: string <<unique>>
+    name_en: string
+    name_np: string
+  }
+  class LocalGovernment {
+    code: string <<unique>>
+    government_type: enum
+    name_en: string
+    name_np: string
+  }
+  class Ward {
+    number: 1..99
+    name_en: string
+    name_np: string
+  }
+  class FiscalYear {
+    code: string <<unique>>
+    year_bs: string
+    year_ad: string
+    label_np: string
+  }
+  class Sector {
+    code: string <<unique>>
+    name_en: string
+    name_np: string
+  }
+  class SubSector {
+    code: string <<unique>>
+    name_en: string
+    name_np: string
+  }
+  class BudgetAllocation {
+    budget_type: enum
+    allocated_amount: Decimal
+    spent_amount: Decimal?
+    review_status: enum
+    reliability: enum
+    data_classification: enum
+  }
+}
+
+package "Project Money Trail" TEAL {
+  class Project {
+    id: UUID
+    code: string <<unique>>
+    title_en / title_np: string
+    status: enum
+    allocated_amount: Decimal?
+    official_progress_percent: Decimal?
+    data_classification: enum
+  }
+  class ProjectLocation {
+    latitude: Decimal
+    longitude: Decimal
+  }
+  class ProjectMilestone {
+    sequence: integer
+    status: enum
+    progress_percent: Decimal
+  }
+  class ProjectEvidenceEvent {
+    event_type: enum
+    date_bs: string
+    date_ad: date?
+    source_page: integer
+  }
+  class Tender {
+    reference: string <<unique>>
+    invitation_number: string
+    procurement_method: enum
+    estimated_amount: Decimal?
+  }
+  class Contractor {
+    name: string
+    registration_number: string?
+    data_classification: enum
+  }
+  class ContractAward {
+    award_reference: string <<unique>>
+    contract_amount: Decimal
+    awarded_date: date?
+  }
+  class Payment {
+    reference: string <<unique>>
+    amount: Decimal
+    paid_on: date
+  }
+}
+
+package "Documents and RAG" PURPLESOFT {
+  class SourceDocument {
+    id: UUID
+    document_type: enum
+    language: enum
+    source_url: URL
+    sha256: string
+    processing_status: enum
+    data_classification: enum
+  }
+  class DocumentPage {
+    page_number: positive integer
+    extraction_method: enum
+    text_quality_score: 0..1
+    ocr_confidence: 0..100?
+    review_status: enum
+  }
+  class DocumentChunk {
+    chunk_index: integer
+    text: text
+    token_count: integer
+    vector_id: string
+  }
+  class DataExtractionRecord {
+    status: enum
+    ocr_languages: string
+    embedded_text_pages: integer
+    ocr_pages: integer
+  }
+  class ProjectDocumentLink {
+    relationship: enum
+    page_from: integer?
+    page_to: integer?
+    evidence_note_en / np: string
+  }
+}
+
+package "Identity, Feedback and Investigation" #FFF1C5 {
+  class User {
+    username: string
+    password_hash: string
+  }
+  class CitizenProfile {
+    role: enum
+    citizen_key: HMAC?
+    verified_municipality_code: string
+    verified_ward_number: integer?
+  }
+  class VerificationRecord {
+    issuer: string
+    subject_key: hash
+    token_identifier_hash: hash
+    expires_at: datetime
+  }
+  class CitizenFeedback {
+    id: UUID
+    completion_rating: 1..5
+    quality_rating: 1..5
+    usefulness_rating: 1..5
+    allocation_fairness_rating: 1..5
+    verification_status: enum
+  }
+  class FeedbackRevision
+  class ModerationRecord
+  class AnomalyFlag {
+    rule_id: string
+    severity: enum
+    reliability: enum
+    data_used: JSON
+    threshold: JSON
+    calculated_values: JSON
+  }
+  class ChatSession {
+    id: UUID
+    title: string
+  }
+  class ChatMessage {
+    role: user | assistant
+    route_used: string
+    response_citations: JSON
+    response_visualizations: JSON
+  }
+  class AuditLog {
+    action: string
+    object_type / object_id: string
+    before_summary / after_summary: JSON
+  }
+}
+
+Province "1" *-- "0..*" District
+District "1" *-- "0..*" LocalGovernment
+LocalGovernment "1" *-- "1..*" Ward
+Sector "1" *-- "0..*" SubSector
+LocalGovernment "1" -- "0..*" BudgetAllocation
+FiscalYear "1" -- "0..*" BudgetAllocation
+SubSector "1" -- "0..*" BudgetAllocation
+BudgetAllocation "0..1" -- "0..*" Project
+LocalGovernment "1" -- "0..*" Project
+Ward "0..1" -- "0..*" Project
+FiscalYear "1" -- "0..*" Project
+SubSector "1" -- "0..*" Project
+Project "1" *-- "0..1" ProjectLocation
+Project "1" *-- "0..*" ProjectMilestone
+Project "1" *-- "0..*" ProjectEvidenceEvent
+Project "1" *-- "0..*" Tender
+Tender "1" *-- "0..1" ContractAward
+Contractor "1" -- "0..*" ContractAward
+ContractAward "1" *-- "0..*" Payment
+ProjectMilestone "0..1" -- "0..*" Payment
+
+LocalGovernment "1" -- "0..*" SourceDocument
+FiscalYear "1" -- "0..*" SourceDocument
+SourceDocument "1" *-- "1..*" DocumentPage
+SourceDocument "1" *-- "0..*" DataExtractionRecord
+DocumentPage "1" *-- "0..*" DocumentChunk
+Project "1" -- "0..*" ProjectDocumentLink
+SourceDocument "1" -- "0..*" ProjectDocumentLink
+
+User "1" *-- "0..1" CitizenProfile
+CitizenProfile "1" *-- "0..*" VerificationRecord
+CitizenProfile "1" -- "0..*" CitizenFeedback
+Project "1" -- "0..*" CitizenFeedback
+CitizenFeedback "1" *-- "0..*" FeedbackRevision
+CitizenFeedback "1" *-- "0..*" ModerationRecord
+Project "1" *-- "0..*" AnomalyFlag
+User "1" *-- "0..*" ChatSession
+Project "0..1" -- "0..*" ChatSession
+ChatSession "1" *-- "1..*" ChatMessage
+User "0..1" -- "0..*" AuditLog
+
+note right of CitizenFeedback
+  DB constraint:
+  UNIQUE(citizen_profile, project)
+end note
+note right of BudgetAllocation
+  Currency uses Decimal.
+  Nullable spent amount means Unknown,
+  not NPR 0.
+end note
+@enduml

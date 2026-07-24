@@ -1,0 +1,76 @@
+@startuml BudgetDarpanTestingStrategy
+!include _theme.puml
+title Budget Darpan — Testing and Evaluation Strategy
+caption Each subsystem is measured with the metric appropriate to its job
+top to bottom direction
+
+rectangle "Quality Gates" as Root #E8F4F1
+
+package "1. Automated Regression" BLUESOFT {
+  component "Django model constraints\nfilters · money trail · permissions" as Backend
+  component "Mock identity integration\nsignature · expiry · duplicate identity" as Identity
+  component "React + Vitest\nlanguage · rendering · voice fallback" as Frontend
+  component "Build and static checks\nRuff · migrations · Vite build" as Static
+}
+
+package "2. AI Component Evaluation" PURPLESOFT {
+  component "Intent Router\nAccuracy · Precision · Recall · F1" as RouterEval
+  component "Language Detector\nEN · Devanagari · Romanized\nConfusion matrix + macro-F1" as LangEval
+  component "RAG Retrieval\nHit@1 · Hit@3 · MRR\nfuture nDCG / citation recall" as RAGEval
+  component "Generation Safety\nunsupported number/date rejection\ninsufficient-evidence behavior" as GenEval
+}
+
+package "3. Data and OCR Evaluation" #FFF1C5 {
+  component "Extraction quality gate\nmethod · warnings · confidence" as OCRGate
+  component "Future ground truth\nCER · WER by language/scan quality" as OCREval
+  component "Provenance audit\nsource URL · document · page · section" as Provenance
+}
+
+package "4. End-to-End Acceptance" TEAL {
+  component "Document → extraction → chunks\n→ retrieval → cited answer" as RAGFlow
+  component "Mock identity → verified profile\n→ feedback → duplicate → edit" as VerifyFlow
+  component "Public project → money trail\n→ chart/map → anomaly explanation" as PublicFlow
+}
+
+Root --> Backend
+Root --> Identity
+Root --> Frontend
+Root --> Static
+Root --> RouterEval
+Root --> LangEval
+Root --> RAGEval
+Root --> GenEval
+Root --> OCRGate
+Root --> OCREval
+Root --> Provenance
+Root --> RAGFlow
+Root --> VerifyFlow
+Root --> PublicFlow
+
+note right of RouterEval
+  Latest private benchmark:
+  46 queries · 91.3% accuracy
+  92.2% macro-F1
+end note
+note right of LangEval
+  36 queries · 91.7% accuracy
+  91.5% macro-F1
+end note
+note right of RAGEval
+  5 multilingual smoke cases
+  Hit@1 = 100% · MRR = 1.00
+  Small sample; not production accuracy.
+end note
+note right of Backend
+  Latest verified:
+  79 backend tests
+  81 whole-repository Python tests
+  19 frontend tests
+end note
+
+note bottom
+  No anomaly precision/recall without expert labels.
+  No OCR CER/WER without manual transcripts.
+  Regression pass rate is not the same as AI accuracy.
+end note
+@enduml

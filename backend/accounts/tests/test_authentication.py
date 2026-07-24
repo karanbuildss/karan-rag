@@ -10,9 +10,18 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from accounts.models import CitizenProfile
-from accounts.services import _exchange_code
+from accounts.services import _exchange_code, _public_key
 
 User = get_user_model()
+
+
+class VerificationKeyConfigurationTests(TestCase):
+    @override_settings(
+        MOCK_IDENTITY_PUBLIC_KEY="deployment-public-key",
+        MOCK_IDENTITY_PUBLIC_KEY_PATH="missing-public-key.pem",
+    )
+    def test_environment_public_key_takes_precedence_over_file(self):
+        self.assertEqual(_public_key(), "deployment-public-key")
 
 
 class SessionAuthenticationTests(TestCase):

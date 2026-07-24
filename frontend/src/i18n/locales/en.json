@@ -16,17 +16,17 @@
     "anomalies": "Review indicators",
     "account": "Account",
     "documents": "Source library",
-    "investigator": "Ask AI",
+    "investigator": "Civic investigator",
     "history": "History",
     "principles": "Our standard",
-    "status": "Build status"
+    "status": "System status"
   },
   "hero": {
     "eyebrow": "Evidence-led civic transparency",
     "title": "See where public money goes—and the evidence behind it.",
     "description": "Explore local budgets, follow projects from allocation to payment, and ask clear questions in English, Nepali, or Romanized Nepali.",
     "primaryAction": "Explore public projects",
-    "projectAction": "Open the Jalpa investigation",
+    "projectAction": "Open the complete money trail",
     "secondaryAction": "See our evidence standard",
     "safety": "Budget Darpan does not accuse. It identifies patterns and evidence that may require further review."
   },
@@ -78,11 +78,11 @@
     }
   },
   "status": {
-    "eyebrow": "Phase 0 · Foundation",
-    "title": "Frontend and API connection",
-    "connecting": "Checking local API…",
-    "connected": "Local API connected",
-    "offline": "API unavailable · browsing fallback remains"
+    "eyebrow": "Live service check",
+    "title": "Evidence services",
+    "connecting": "Checking evidence services…",
+    "connected": "Evidence services connected",
+    "offline": "Evidence services unavailable · try again shortly"
   },
   "discovery": {
     "modes": {
@@ -126,7 +126,7 @@
     },
     "loading": "Loading project records and structured totals…",
     "errorTitle": "Project discovery is temporarily unavailable.",
-    "errorDescription": "Check that the Budget Darpan API is running, then try again.",
+    "errorDescription": "The evidence service is temporarily unavailable. Try again shortly.",
     "empty": "No projects match these filters. Clear one or more filters and try again.",
     "municipalityEvidence": {
       "eyebrow": "Reviewed municipality result",
@@ -227,7 +227,7 @@
     "loading": "Loading the project money trail…",
     "errorEyebrow": "Connection issue",
     "errorTitle": "The project record could not be loaded.",
-    "errorDescription": "Start the local API and try again. Public browsing remains available when optional AI services are offline.",
+    "errorDescription": "The evidence service is temporarily unavailable. Try again shortly; public source links remain available.",
     "retry": "Try again",
     "back": "Back to overview",
     "syntheticDemo": "Synthetic demo data",
@@ -353,8 +353,8 @@
     "eyebrow": "Evidence-grounded civic investigator",
     "title": "Ask where the project money went",
     "standaloneEyebrow": "Bilingual public evidence assistant",
-    "standaloneTitle": "Investigate the complete showcase trail.",
-    "standaloneDescription": "This standalone entry uses the visibly synthetic complete-flow project. Open any real project to ask questions within its own evidence boundary.",
+    "standaloneTitle": "Investigate a complete project money trail.",
+    "standaloneDescription": "Explore the clearly labelled synthetic reference project, or open an official project to investigate only within its available evidence.",
     "description": "Ask in English, Nepali, or Romanized Nepali. Exact amounts come from the project database; document claims remain attached to cited pages.",
     "safety": "Budget Darpan does not accuse. It identifies patterns and evidence that may require further review.",
     "questionLabel": "Your question",
@@ -497,7 +497,7 @@
     "eyebrow": "Privacy-preserving demo verification",
     "title": "Verify one mock citizen identity.",
     "description": "The identity provider matches synthetic credentials, issues a one-time code, and signs a short-lived assertion for Budget Darpan.",
-    "mockBoundary": "This is not Nagarik App or official government verification. All provided identities are synthetic hackathon records.",
+    "mockBoundary": "This independent test provider is not Nagarik App or official government verification. All supplied identities are fictional test records.",
     "oneIdentityBoundary": "Creating another email or username cannot create another verified rating: one signed demo identity maps to one privacy-preserving citizen key.",
     "loginFirst": "Sign in before verification",
     "serviceError": "The verification service is temporarily unavailable.",
@@ -603,6 +603,6 @@
   },
   "footer": {
     "description": "CodeFest 2026 · Team Die Vordenker",
-    "disclaimer": "Hackathon prototype · Mock identity provider"
+    "disclaimer": "CodeFest demonstration · Independent mock identity provider"
   }
 }

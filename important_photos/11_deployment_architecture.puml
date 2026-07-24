@@ -1,0 +1,66 @@
+@startuml BudgetDarpanDeployment
+!include _theme.puml
+title Budget Darpan — Deployment Architecture
+caption Fully verified local demo and realistic cloud-ready target
+left to right direction
+
+node "Presentation Laptop — Verified Demo" as Laptop #E8F4F1 {
+  artifact "React Vite\nlocalhost:5173" as LocalUI
+  artifact "Django DRF\nlocalhost:8000" as LocalAPI
+  artifact "Mock Identity Django\nlocalhost:8001" as LocalID
+  database "SQLite" as SQLite
+  database "ChromaDB" as LocalChroma
+  artifact "Ollama\nqwen2.5:3b\nnomic-embed-text-v2-moe" as LocalOllama
+  artifact "Tesseract + Poppler\nnep+eng OCR" as LocalOCR
+  folder "Ignored local PDFs / media" as LocalMedia
+}
+
+cloud "Cloud Preview / Future Production" as Cloud BLUESOFT {
+  node "Vercel / Static CDN" as Vercel {
+    artifact "React production build" as CloudUI
+  }
+  node "Render / Railway / Container Platform" as Compute {
+    artifact "Django API + Gunicorn" as CloudAPI
+    artifact "Mock Identity Service" as CloudID
+  }
+  database "Managed PostgreSQL\nNeon / Railway / Render" as Postgres
+  cloud "Pinecone\nvector index" as CloudVector
+  cloud "S3-compatible object storage\nsource PDFs and evidence" as ObjectStore
+  cloud "Hosted multilingual\nembedding/chat provider\nor paid Ollama machine" as HostedAI
+}
+
+actor "Browser" as Browser
+Browser --> LocalUI : local demo
+LocalUI --> LocalAPI
+LocalUI --> LocalID
+LocalAPI --> SQLite
+LocalAPI --> LocalChroma
+LocalAPI --> LocalOllama
+LocalAPI --> LocalOCR
+LocalAPI --> LocalMedia
+
+Browser --> CloudUI : HTTPS public preview
+CloudUI --> CloudAPI : /api/v1
+CloudUI --> CloudID : verification start/confirm
+CloudAPI --> CloudID : secure code exchange
+CloudAPI --> Postgres
+CloudAPI --> CloudVector
+CloudAPI --> ObjectStore
+CloudAPI --> HostedAI
+
+note bottom of Laptop
+  Current complete, tested configuration.
+  No API keys or documents leave the laptop.
+end note
+
+note bottom of Cloud
+  Free web tiers have cold starts, ephemeral disks
+  and insufficient resources for current Ollama models.
+  Full hosted RAG needs durable storage and hosted AI.
+end note
+
+legend bottom
+  Environment secrets live in ignored .env files locally
+  and platform secret managers in deployment—never in Git or frontend code.
+endlegend
+@enduml

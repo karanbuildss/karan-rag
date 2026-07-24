@@ -1,0 +1,73 @@
+@startuml BudgetDarpanProvenance
+!include _theme.puml
+title Budget Darpan — Data Provenance and Trust Boundaries
+caption Every public value must retain its evidence class and source scope
+left to right direction
+
+package "Input Evidence Classes" BLUESOFT {
+  rectangle "official\nDirect government record" as Official #E8F4F1
+  rectangle "reconstructed_from_official_sources\nCarefully joined official records" as Reconstructed BLUESOFT
+  rectangle "curated_demo\nHuman-prepared non-official demo" as Curated #FFF1C5
+  rectangle "synthetic_demo\nClearly fictional showcase values" as Synthetic #FCE8E5
+}
+
+component "Validation and Review" as Validate TEAL
+
+package "Provenance Metadata" PURPLESOFT {
+  rectangle "Municipality + fiscal year" as M1
+  rectangle "Document title + type" as M2
+  rectangle "Source URL + SHA-256" as M3
+  rectangle "Page + section" as M4
+  rectangle "Extraction method + confidence" as M5
+  rectangle "Review status + reliability" as M6
+}
+
+database "Structured Facts" as Facts
+database "Reviewed Document Pages" as Pages
+component "Investigator and UI" as UI
+
+Official --> Validate
+Reconstructed --> Validate
+Curated --> Validate
+Synthetic --> Validate
+Validate --> M1
+Validate --> M2
+Validate --> M3
+Validate --> M4
+Validate --> M5
+Validate --> M6
+M1 --> Facts
+M2 --> Pages
+M3 --> Pages
+M4 --> Pages
+M5 --> Pages
+M6 --> Facts
+M6 --> Pages
+Facts --> UI : exact values + classification
+Pages --> UI : claims + page citations
+
+rectangle "Known value" as Known #E8F4F1
+rectangle "NPR 0\nexplicit zero" as Zero #FFFFFF
+rectangle "Unknown\nnot evidenced" as Unknown #FFF1C5
+rectangle "Not yet reported" as NotReported #FFF1C5
+
+UI --> Known
+UI --> Zero
+UI --> Unknown
+UI --> NotReported
+
+note bottom of Synthetic
+  Synthetic showcase values are isolated in a
+  separate project and never merged into official records.
+end note
+
+note bottom of Unknown
+  Unknown ≠ zero.
+  A missing award does not prove no award exists.
+end note
+
+note bottom of UI
+  Document evidence may support a narrative claim.
+  Only relational structured data supplies exact public money values.
+end note
+@enduml

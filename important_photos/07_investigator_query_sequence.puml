@@ -1,0 +1,66 @@
+@startuml BudgetDarpanInvestigatorSequence
+!include _theme.puml
+title Budget Darpan — Investigator Query Sequence
+caption Runtime routing keeps structured facts and document claims separate
+autonumber
+
+actor Citizen
+participant "React Investigator" as UI
+participant "DRF Query API" as API
+participant "Language Detector" as Lang
+participant "Intent Router" as Router
+participant "Fact Selector" as Facts
+participant "Hybrid Retriever" as Retrieval
+database "Relational DB" as DB
+database "Chroma / Pinecone" as Vector
+participant "Safe Composer" as Composer
+participant "Optional Ollama Chat" as Ollama
+
+Citizen -> UI : type / edit voice transcript
+UI -> API : POST /api/v1/investigator/query\nquestion + project_id + session_id?
+API -> Lang : detect_language(question)
+Lang --> API : en | ne | romanized_ne
+API -> Router : route_question(question, has_project)
+Router --> API : explicit InvestigationRoute
+
+alt DATABASE_QUERY
+  API -> Facts : select exact project facts
+  Facts -> DB : allocation, award, payments, progress
+  DB --> Facts : Decimal values + provenance
+  Facts --> API : structured facts
+else DOCUMENT_RAG
+  API -> Retrieval : project-filtered evidence query
+  Retrieval -> Vector : semantic candidates
+  Vector --> Retrieval : chunks + scores + metadata
+  Retrieval -> DB : page text, links and review state
+  DB --> Retrieval : accepted cited pages
+  Retrieval --> API : ranked citations
+else ANOMALY_EXPLANATION
+  API -> DB : active flags and rule payload
+  DB --> API : reason + data + threshold + recommendation
+else PROJECT_INVESTIGATION
+  API -> Facts : full money trail
+  API -> Retrieval : allocation/audit/procurement evidence
+  Facts -> DB
+  Retrieval -> Vector
+  DB --> Facts
+  Vector --> Retrieval
+end
+
+API -> Composer : route + language + facts + citations
+opt generation enabled and evidence bounded
+  Composer -> Ollama : context-limited prompt
+  Ollama --> Composer : candidate wording
+  Composer -> Composer : reject unsupported amounts/dates
+end
+Composer --> API : answer + citations + visualizations
+API -> DB : store chat message if authenticated session
+API --> UI : stable response envelope
+UI --> Citizen : localized answer, graph and citation cards
+Citizen -> UI : open cited document page
+
+note over API,Composer
+  No selected project + project-specific question
+  → INSUFFICIENT_EVIDENCE, not a guessed project.
+end note
+@enduml

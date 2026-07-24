@@ -1,0 +1,79 @@
+@startuml BudgetDarpanRAGPipeline
+!include _theme.puml
+title Budget Darpan — Retrieval-Augmented Generation Pipeline
+caption Page-traceable multilingual retrieval; the model is not trained on the PDFs
+left to right direction
+
+package "Offline / Ingestion Time" BLUESOFT {
+  folder "Official PDF / image" as Input
+  component "Text-layer detection" as Detect
+  component "PyMuPDF extraction" as Direct
+  component "Selective OCR\nTesseract nep+eng" as OCR
+  component "Quality + review gate" as Review
+  component "Page-aware chunker\n320 tokens / 50 overlap" as Chunk
+  component "Document embeddings\nsearch_document prefix" as DocEmbed
+  database "DocumentPage +\nDocumentChunk metadata" as ChunkDB
+  database "Chroma local" as Chroma
+  cloud "Pinecone optional\n768-d cosine index" as Pinecone #E8F4F1
+}
+
+package "Online / Question Time" PURPLESOFT {
+  actor "Citizen question" as Question
+  component "Language detection\nEN · नेपाली · Romanized" as Lang
+  component "Intent router" as Router
+  component "Query normalization\nand entity aliases" as Normalize
+  component "Query embedding\nsearch_query prefix" as QueryEmbed
+  component "Metadata filters\nproject · municipality · FY · type" as Filter
+  component "Hybrid retrieval\nvector + lexical/BM25" as Retrieval
+  component "Deduplicate + rank\nsmall top-K" as Rank
+  component "Structured fact selector" as Facts
+  component "Evidence-safe composer" as Composer
+  component "Optional qwen2.5:3b\nbounded wording" as LLM
+  rectangle "Answer in user language\n+ citations + graph data" as Answer #E8F4F1
+}
+
+Input --> Detect
+Detect --> Direct : usable embedded text
+Detect --> OCR : scanned / broken legacy font
+Direct --> Review
+OCR --> Review
+Review --> Chunk : approved or accepted pages only
+Chunk --> ChunkDB : text + page + section + source URL
+Chunk --> DocEmbed
+DocEmbed --> Chroma
+DocEmbed --> Pinecone
+
+Question --> Lang
+Lang --> Router
+Router --> Facts : exact financial / timeline route
+Router --> Normalize : document or combined route
+Normalize --> QueryEmbed
+QueryEmbed --> Filter
+Filter --> Retrieval
+Chroma --> Retrieval
+Pinecone --> Retrieval
+ChunkDB --> Retrieval : lexical text + metadata
+Retrieval --> Rank
+Rank --> Composer : cited evidence
+Facts --> Composer : exact Decimal / dates / status
+Composer --> LLM : only when enabled and evidence exists
+LLM --> Answer : verified wording
+Composer --> Answer : deterministic fallback
+
+note bottom of Review
+  Page boundaries, extraction method,
+  confidence, warnings and review state
+  are preserved.
+end note
+
+note bottom of Composer
+  If evidence is insufficient:
+  “I do not have enough evidence
+  in the available documents.”
+end note
+
+legend bottom
+  Retrieval metrics: Hit@K, MRR, citation precision/recall.
+  F1 is used for the intent/language classifiers, not for RAG retrieval itself.
+endlegend
+@enduml

@@ -33,6 +33,7 @@ if not SECRET_KEY:
         raise RuntimeError("SECRET_KEY must be set when DEBUG is false.")
 
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
+PUBLIC_API_BASE_URL = os.getenv("PUBLIC_API_BASE_URL", "http://localhost:8000").rstrip("/")
 
 INSTALLED_APPS = [
     "config",
@@ -140,6 +141,11 @@ CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_AGE = int(os.getenv("SESSION_COOKIE_AGE", "14400"))
 SESSION_SAVE_EVERY_REQUEST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", default=not DEBUG)
+SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -226,6 +232,7 @@ MOCK_IDENTITY_SERVER_URL = os.getenv(
     "http://localhost:8001",
 ).strip()
 MOCK_IDENTITY_CLIENT_SECRET = os.getenv("MOCK_IDENTITY_CLIENT_SECRET", "").strip()
+MOCK_IDENTITY_PUBLIC_KEY = os.getenv("MOCK_IDENTITY_PUBLIC_KEY", "").replace("\\n", "\n").strip()
 MOCK_IDENTITY_ISSUER = os.getenv(
     "MOCK_IDENTITY_ISSUER",
     "budget-darpan-mock-id",

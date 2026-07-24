@@ -8,22 +8,18 @@ Budget Darpan turns fragmented local-government records into a bilingual, eviden
 
 > **Safety principle:** Budget Darpan does not accuse. It identifies patterns and evidence that may require further review.
 
-## Build status
+## Release readiness
 
-The project is being delivered as complete vertical slices. A phase is complete only after its model, API, user experience, tests, and demo integration are verified.
+The release candidate connects each demo-critical capability from data model through API, user experience, tests, and presentation flow.
 
-| Phase | Outcome | Status |
+| Capability | Outcome | Status |
 |---|---|---|
-| 0 — Foundation | Git safety, isolated environment, pinned dependencies, Django/React foundations, quality gates | Complete |
-| 1 — Public money trail | Seeded geography, budgets, projects, procurement, payments, API, bilingual project screen | Complete |
-| 2 — Evidence experience | Maps, charts, document viewer, OCR with page traceability | Complete |
-| 2A — Real evidence baseline | Official budget, procurement, addendum, and audit linkage with explicit missing-data states | Complete |
-| 3A — Jalpa civic investigator | Query router, database facts, local RAG, citations, multilingual answers, safe fallbacks | Complete |
-| 3B — Project discovery | Searchable dashboard, filters, comparison, and evidence-led project discovery | Complete |
-| 4 — Accountability | Explainable anomalies, authentication, mock verification, duplicate-safe feedback | Complete |
-| 4B — Reviewed municipal evidence | Kathmandu, Hetauda, and Rupa budget-versus-spending facts plus five Rupa Ward 2 projects, with page citations and scope warnings | Complete |
-| 4C — Hybrid event investigator | Structured event answers, project-filtered RAG, multilingual composition, and explainable evidence-gap rules | Complete |
-| 5 — Demo hardening | Complete showcase trail, answer charts, document review, voice, secure startup, and end-to-end verification | Complete |
+| Platform foundation | Git safety, isolated environments, pinned dependencies, Django/React foundations, quality gates | Verified |
+| Public money trail | Geography, budgets, projects, procurement, payments, bilingual project screens | Verified |
+| Evidence experience | Maps, charts, document viewer, bilingual OCR, and page traceability | Verified |
+| Civic investigator | Explicit routing, structured facts, project-scoped RAG, citations, multilingual answers, and safe fallbacks | Verified |
+| Accountability | Explainable anomaly indicators, authentication, independent mock verification, and duplicate-safe feedback | Verified |
+| Demonstration | Official evidence paths plus a visibly labelled synthetic complete-flow reference project | Verified |
 
 The detailed product brief is in [README_VORDENKER.md](README_VORDENKER.md), and the engineering sequence is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
@@ -49,6 +45,14 @@ This keeps the strongest differentiators connected:
 - Retrieval: local ChromaDB behind a provider interface; Pinecone remains an optional deployment adapter
 - OCR: PyMuPDF, pdf2image, Tesseract `eng+nep`
 - Quality: Pytest, Ruff, Vitest, React Testing Library
+
+## Architecture and presentation diagrams
+
+Editable PlantUML sources for the system context, architecture, end-to-end flow, development methodology, domain class model, RAG pipeline, document ingestion, mock identity verification, anomaly detection, deployment, testing, and data-provenance boundaries are maintained in [`important_photos/`](important_photos/README.md). The folder README includes VS Code preview/export shortcuts and command-line validation instructions.
+
+## Deployment
+
+The repository includes a Render Blueprint for the Django API and independent mock identity service, plus Vercel SPA routing for the React frontend. Follow [DEPLOYMENT.md](DEPLOYMENT.md) for the exact environment variables, secret handling, PostgreSQL setup, deployment order, health checks, and current cloud-RAG boundary.
 
 ## Local setup
 

@@ -4,6 +4,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from config.models import DataClassification
+from django.conf import settings
 from django.utils import timezone
 from documents.models import DocumentPage, ProjectDocumentLink, SourceDocument
 from payments.models import Payment
@@ -13,7 +14,9 @@ from projects.models import Project, ProjectLocation, ProjectMilestone
 SHOWCASE_PROJECT_ID = UUID("e4d7eeb5-50f8-4a67-9c44-477d121f765d")
 SHOWCASE_DOCUMENT_ID = UUID("5ca42695-8a90-4c2a-86e6-701c56bce32f")
 SHOWCASE_PROJECT_CODE = "DEMO-PKR-W08-ROAD-2081-82"
-SHOWCASE_SOURCE_URL = f"http://localhost:8000/api/v1/documents/{SHOWCASE_DOCUMENT_ID}/file/"
+SHOWCASE_SOURCE_URL = (
+    f"{settings.PUBLIC_API_BASE_URL}/api/v1/documents/{SHOWCASE_DOCUMENT_ID}/file/"
+)
 NEPAL_TIMEZONE = ZoneInfo("Asia/Kathmandu")
 
 

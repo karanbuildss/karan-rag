@@ -1,0 +1,57 @@
+@startuml BudgetDarpanMockIdentity
+!include _theme.puml
+title Budget Darpan — Mock Nagarik-Style Identity Verification
+caption Security demonstration only; not an official Nagarik App integration
+autonumber
+
+actor Citizen
+participant "React /verify" as UI
+participant "Mock Identity Server" as IDP
+database "Fictional Seeded Identities" as Seeds
+participant "Budget Darpan Backend" as API
+database "CitizenProfile +\nVerificationRecord" as DB
+
+Citizen -> UI : enter phone + citizenship number
+UI -> IDP : POST /verification/start
+IDP -> Seeds : constant-time fictional match
+Seeds --> IDP : stable subject + municipality + ward
+IDP --> UI : challenge_id + optional demo OTP hint
+Citizen -> UI : enter OTP
+UI -> IDP : POST /verification/confirm
+IDP --> UI : one-time authorization code (60 s)
+UI -> API : POST /auth/verification/complete\nwith one-time code
+API -> IDP : backend POST /verification/exchange\n+ shared client secret
+IDP -> IDP : consume code once
+IDP -> IDP : sign short-lived RS256 assertion
+IDP --> API : JWT assertion\niss + aud + sub + jti + exp
+API -> IDP : GET /.well-known/jwks.json\nor use configured public key
+IDP --> API : RSA public key
+API -> API : verify signature, issuer, audience, expiry and jti
+API -> API : citizen_key = HMAC(secret, issuer + subject)
+API -> DB : unique citizen key + hashed token identifier
+DB --> API : verified citizen profile
+API --> UI : verified_citizen status
+UI --> Citizen : verification badge
+
+== Duplicate-safe feedback ==
+Citizen -> UI : submit rating for project
+UI -> API : POST feedback + idempotency key
+API -> DB : UNIQUE(citizen_profile, project)
+alt first feedback
+  DB --> API : created
+  API --> UI : success
+else duplicate feedback
+  DB --> API : constraint violation
+  API --> UI : clear duplicate response; edit original
+end
+
+note over IDP,API
+  Raw phone and citizenship values are never stored
+  in the Budget Darpan application database or logs.
+end note
+
+note over UI,API
+  A second Gmail/username cannot create a second verified citizen:
+  the same signed subject always produces the same unique HMAC citizen key.
+end note
+@enduml

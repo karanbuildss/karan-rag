@@ -69,7 +69,7 @@ DEMO_OTP=<six-digit demonstration code>
 
 If Render changes either service name because the preferred name is unavailable, update `PUBLIC_API_BASE_URL` and `MOCK_IDENTITY_SERVER_URL` to the actual HTTPS URLs.
 
-The API start command runs migrations, idempotently seeds the documented showcase data, imports reviewed structured budget facts, evaluates anomaly rules, and starts Gunicorn. It does not ingest ignored private PDFs.
+The API start command runs migrations, idempotently seeds the documented showcase data, evaluates anomaly rules, and starts Gunicorn. Reviewed structured facts are imported only when their supporting local source corpus is present. It does not ingest ignored private PDFs or publish reviewed facts whose supporting files are absent.
 
 The hosted API uses secure `SameSite=None` cookies because Vercel and Render have different origins. The mock identity service intentionally runs one worker because its short-lived demonstration challenges are stored in memory; this avoids a confirmation request reaching a different worker.
 

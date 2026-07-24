@@ -3,6 +3,7 @@ from documents.services.extraction import (
     TextQualityAssessment,
     assess_text_quality,
     extract_document,
+    extract_document_pages,
 )
 from documents.services.ingestion import ManifestImportError, import_evidence_manifest
 
@@ -12,5 +13,6 @@ __all__ = [
     "TextQualityAssessment",
     "assess_text_quality",
     "extract_document",
+    "extract_document_pages",
     "import_evidence_manifest",
 ]

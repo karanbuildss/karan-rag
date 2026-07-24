@@ -65,16 +65,33 @@ def assess_text_quality(text, *, language, min_chars=None, min_score=None):
     devanagari_letters = sum("\u0900" <= character <= "\u097f" for character in letters)
     latin_letters = sum("a" <= character.lower() <= "z" for character in letters)
     devanagari_ratio = devanagari_letters / max(1, len(letters))
+    extended_latin_artifacts = sum(
+        "\u0080" <= character <= "\u024f" and character.isalpha() for character in compact
+    )
 
     suspicious_symbols = sum(character in "{}[]\\/|~^" for character in compact)
     suspicious_ratio = suspicious_symbols / len(compact)
-    nepali_first = language == SourceDocument.Language.NEPALI
-    if nepali_first and latin_letters >= 40 and devanagari_ratio < 0.15:
+    nepali_document = language in {
+        SourceDocument.Language.NEPALI,
+        SourceDocument.Language.MIXED,
+    }
+    legacy_marker_tokens = re.findall(
+        r"(?=[A-Za-z][A-Za-z0-9{}\[\]/=.@-]{3,})(?=[^\s]*[{}\[\]/=])[^\s]+",
+        normalized,
+    )
+    if nepali_document and latin_letters >= 40 and devanagari_ratio < 0.15:
         score -= 0.6
+        warnings.append("legacy_nepali_font_suspected")
+    elif nepali_document and len(legacy_marker_tokens) >= 2:
+        score -= 0.55
         warnings.append("legacy_nepali_font_suspected")
     elif suspicious_ratio > 0.025:
         score -= min(0.35, suspicious_ratio * 4)
         warnings.append("unusual_symbol_density")
+
+    if nepali_document and extended_latin_artifacts >= 4:
+        score -= 0.55
+        warnings.append("font_encoding_artifacts_suspected")
 
     tokens = re.findall(r"\S+", normalized)
     if len(tokens) >= 30:
@@ -201,6 +218,184 @@ def _save_page(document, page_number, *, text, method, quality, confidence, warn
             "character_count": len(text),
         },
     )
+
+
+def _extract_and_save_page(document, page, page_number, *, section=""):
+    embedded_quality = assess_text_quality(
+        page.get_text("text"),
+        language=document.language,
+    )
+    if embedded_quality.usable:
+        _save_page(
+            document,
+            page_number,
+            text=embedded_quality.normalized_text,
+            method=DocumentPage.ExtractionMethod.EMBEDDED_TEXT,
+            quality=embedded_quality,
+            confidence=None,
+            warnings=embedded_quality.warnings,
+        )
+        outcome = "embedded"
+    else:
+        try:
+            ocr_text, confidence = _ocr_page(
+                page,
+                pdf_path=document.original_file.path,
+                page_number=page_number,
+            )
+            ocr_quality = assess_text_quality(
+                ocr_text,
+                language=document.language,
+                min_chars=1,
+            )
+            warnings = [*embedded_quality.warnings, "ocr_fallback_used"]
+            if confidence is None or confidence < 70:
+                warnings.append("low_ocr_confidence")
+            if not ocr_text:
+                warnings.append("ocr_returned_no_text")
+            _save_page(
+                document,
+                page_number,
+                text=ocr_text,
+                method=(
+                    DocumentPage.ExtractionMethod.OCR
+                    if ocr_text
+                    else DocumentPage.ExtractionMethod.NONE
+                ),
+                quality=ocr_quality,
+                confidence=confidence,
+                warnings=warnings,
+            )
+            outcome = "ocr"
+        except (DocumentExtractionError, pytesseract.TesseractError) as exc:
+            fallback_text = embedded_quality.normalized_text
+            method = (
+                DocumentPage.ExtractionMethod.EMBEDDED_TEXT
+                if fallback_text
+                else DocumentPage.ExtractionMethod.NONE
+            )
+            _save_page(
+                document,
+                page_number,
+                text=fallback_text,
+                method=method,
+                quality=embedded_quality,
+                confidence=None,
+                warnings=[*embedded_quality.warnings, f"ocr_failed:{type(exc).__name__}"],
+            )
+            outcome = "failed"
+
+    if section:
+        DocumentPage.objects.filter(document=document, page_number=page_number).update(
+            section=section
+        )
+    return outcome
+
+
+def extract_document_pages(document_id, page_numbers, *, force=False, sections=None):
+    """Extract selected one-based PDF pages without processing the entire document."""
+    document = SourceDocument.objects.get(pk=document_id)
+    if not document.original_file:
+        raise DocumentExtractionError("The original PDF is not available for extraction.")
+    requested_pages = sorted({int(page_number) for page_number in page_numbers})
+    if not requested_pages or requested_pages[0] < 1:
+        raise DocumentExtractionError("At least one positive page number is required.")
+
+    sections = sections or {}
+    extractor_version = f"PyMuPDF {getattr(pymupdf, 'VersionBind', 'unknown')}"
+    record = DataExtractionRecord.objects.create(
+        document=document,
+        status=DataExtractionRecord.Status.RUNNING,
+        extractor_version=extractor_version,
+        ocr_languages=settings.OCR_LANGUAGES,
+        details={"mode": "selected_pages", "requested_pages": requested_pages},
+    )
+    document.processing_status = SourceDocument.ProcessingStatus.EXTRACTING
+    document.extraction_error = ""
+    document.save(update_fields=["processing_status", "extraction_error", "updated_at"])
+
+    counts = {"embedded": 0, "ocr": 0, "failed": 0, "skipped": 0}
+    try:
+        with pymupdf.open(document.original_file.path) as pdf:
+            document.page_count = len(pdf)
+            invalid_pages = [
+                page_number for page_number in requested_pages if page_number > len(pdf)
+            ]
+            if invalid_pages:
+                raise DocumentExtractionError(
+                    f"Requested page exceeds the PDF page count: {invalid_pages[0]}."
+                )
+            for page_number in requested_pages:
+                existing = document.pages.filter(page_number=page_number).first()
+                if existing and not force:
+                    counts["skipped"] += 1
+                    if sections.get(page_number) and not existing.section:
+                        existing.section = sections[page_number]
+                        existing.save(update_fields=["section", "updated_at"])
+                    continue
+                outcome = _extract_and_save_page(
+                    document,
+                    pdf[page_number - 1],
+                    page_number,
+                    section=sections.get(page_number, ""),
+                )
+                counts[outcome] += 1
+
+        now = timezone.now()
+        review_required = document.pages.filter(
+            page_number__in=requested_pages,
+            review_status=DocumentPage.ReviewStatus.REVIEW_REQUIRED,
+        ).exists()
+        final_status = (
+            SourceDocument.ProcessingStatus.FAILED
+            if counts["failed"] == len(requested_pages)
+            else SourceDocument.ProcessingStatus.NEEDS_REVIEW
+            if review_required or len(requested_pages) < document.page_count
+            else SourceDocument.ProcessingStatus.EXTRACTED
+        )
+        record_status = (
+            DataExtractionRecord.Status.FAILED
+            if final_status == SourceDocument.ProcessingStatus.FAILED
+            else DataExtractionRecord.Status.NEEDS_REVIEW
+            if final_status == SourceDocument.ProcessingStatus.NEEDS_REVIEW
+            else DataExtractionRecord.Status.COMPLETED
+        )
+        document.processing_status = final_status
+        document.extracted_at = now
+        document.save(
+            update_fields=["processing_status", "page_count", "extracted_at", "updated_at"]
+        )
+        record.status = record_status
+        record.total_pages = document.page_count
+        record.embedded_text_pages = counts["embedded"]
+        record.ocr_pages = counts["ocr"]
+        record.failed_pages = counts["failed"]
+        record.details = {
+            **record.details,
+            "processed_pages": len(requested_pages) - counts["skipped"],
+            "skipped_existing_pages": counts["skipped"],
+            "partial_extraction": len(requested_pages) < document.page_count,
+            "quality_threshold": settings.OCR_MIN_QUALITY_SCORE,
+        }
+        record.completed_at = now
+        record.save()
+        return list(document.pages.filter(page_number__in=requested_pages))
+    except Exception as exc:
+        now = timezone.now()
+        safe_message = f"{type(exc).__name__}: {str(exc)[:420]}"
+        document.processing_status = SourceDocument.ProcessingStatus.FAILED
+        document.extraction_error = safe_message
+        document.save(update_fields=["processing_status", "extraction_error", "updated_at"])
+        record.status = DataExtractionRecord.Status.FAILED
+        record.error_message = safe_message
+        record.total_pages = document.page_count
+        record.completed_at = now
+        record.save()
+        if isinstance(exc, DocumentExtractionError):
+            raise
+        raise DocumentExtractionError(
+            "Selected-page extraction failed; the original was preserved."
+        ) from exc
 
 
 def extract_document(document_id, *, force=False, max_pages=None):

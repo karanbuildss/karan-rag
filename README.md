@@ -18,7 +18,8 @@ The project is being delivered as complete vertical slices. A phase is complete 
 | 1 — Public money trail | Seeded geography, budgets, projects, procurement, payments, API, bilingual project screen | Complete |
 | 2 — Evidence experience | Maps, charts, document viewer, OCR with page traceability | Complete |
 | 2A — Real evidence baseline | Official budget, procurement, addendum, and audit linkage with explicit missing-data states | Complete |
-| 3 — Civic investigator | Query router, structured answers, RAG, citations, safe fallbacks | Next |
+| 3A — Jalpa civic investigator | Query router, database facts, local RAG, citations, multilingual answers, safe fallbacks | Complete |
+| 3B — Project discovery | Searchable dashboard, filters, comparison, and evidence-led project discovery | Next |
 | 4 — Accountability | Explainable anomalies, authentication, mock verification, duplicate-safe feedback | Planned |
 | 5 — Demo hardening | End-to-end acceptance test, accessibility, performance, deployment, backup demo | Planned |
 
@@ -42,8 +43,8 @@ This keeps the strongest differentiators connected:
 - Backend: Django 5.2, Django REST Framework, SQLite locally, PostgreSQL-ready deployment
 - Frontend: React, Vite, Tailwind CSS, React i18next
 - Visualization: Recharts, Leaflet, OpenStreetMap
-- AI: Ollama with an explicit investigator router
-- Retrieval: Pinecone with local ChromaDB fallback
+- AI: Ollama with an explicit investigator router and a deterministic evidence-safe fallback
+- Retrieval: local ChromaDB behind a provider interface; Pinecone remains an optional deployment adapter
 - OCR: PyMuPDF, pdf2image, Tesseract `eng+nep`
 - Quality: Pytest, Ruff, Vitest, React Testing Library
 
@@ -122,7 +123,7 @@ npm.cmd run build
 - Backend and frontend test suites, linters, formatting checks, migrations, and production build pass.
 - `AGENTS.md`, `.env`, local databases, virtual environments, vector data, dependencies, and build artifacts are ignored by Git.
 
-Local tooling note: Tesseract 5.5 is verified with `eng`, `nep`, and `osd`; Poppler 25.07 is available; and Ollama is verified with `qwen2.5:3b` and `nomic-embed-text-v2-moe`. Pinecone is not required until the investigator/RAG phase because the project will retain its local fallback.
+Local tooling note: Tesseract 5.5 is verified with `eng`, `nep`, and `osd`; Poppler 25.07 is available; and Ollama is verified with `qwen2.5:3b` and `nomic-embed-text-v2-moe`. Phase 3A runs locally with ChromaDB and does not require a Pinecone account or API key.
 
 ## Phase 1 verification
 
@@ -216,6 +217,67 @@ GET /api/v1/projects/{id}/evidence/
 ```
 
 Current verified gates: 20 backend tests in both Django and Pytest, 6 frontend tests, real Nepali OCR, PyMuPDF-to-Poppler rendering fallback coverage, Ruff lint/format, frontend lint, code-split production build, migration drift check, and warning-free OpenAPI generation.
+
+## Phase 3A verification
+
+The Jalpa project page now contains an evidence-grounded civic investigator. Its backend uses an explicit route instead of sending every question directly to a chat model:
+
+```text
+DATABASE_QUERY
+DOCUMENT_RAG
+PROJECT_INVESTIGATION
+GENERAL_HELP
+INSUFFICIENT_EVIDENCE
+```
+
+The investigator:
+
+- detects English, Nepali, and Romanized Nepali questions;
+- obtains allocations, tender estimates, awards, payments, progress, and unknown states from the relational database;
+- retrieves curator-reviewed notes and accepted PDF chunks with hybrid Chroma similarity and BM25-style lexical ranking;
+- uses Nomic's asymmetric `search_document:` and `search_query:` embedding tasks;
+- normalizes Nepali digits, applies conservative English lexical lemmas, and expands Romanized Nepali civic terms without damaging the natural text sent to the embedding model;
+- boosts exact contract IDs, fiscal years, amounts, and the requested evidence relationship during reranking;
+- falls back to local lexical evidence when ChromaDB or Ollama embeddings are unavailable;
+- uses `qwen2.5:3b` only as an optional evidence-bounded wording layer;
+- rejects model output that introduces new numbers or accusatory language and returns a deterministic answer instead;
+- keeps a tender estimate explicitly separate from a contract award or payment;
+- returns clickable document, page, section, source, limitation, route, and provenance metadata.
+
+Prepare or refresh the local Jalpa evidence index after seeding and registering the evidence manifest:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe manage.py ingest_evidence
+.\.venv\Scripts\python.exe manage.py index_project_evidence --project-code PKR-W08-JALPA-2077-78 --extract-linked-pages
+.\.venv\Scripts\python.exe manage.py evaluate_project_retrieval --project-code PKR-W08-JALPA-2077-78 --fail-below 1.0
+```
+
+Large linked ranges use a bounded selection: the first five and final three pages. Chunks never cross page boundaries, default to 320 tokens with a 50-token overlap, preserve headings and table layout within each page, and retain project, document, relationship, page, section, language, municipality, fiscal year, classification, and review metadata.
+
+The index always contains the curator-reviewed, page-linked manifest evidence. Extracted PDF text is added only when its `DocumentPage` review status is `auto_accepted` or `approved`; unreviewed OCR is never embedded. The current Jalpa preparation checked 15 targeted pages and indexed 15 accepted PDF chunks plus four curated evidence records. Budget page 168 and audit page 48 were correctly sent to Nepali OCR after legacy-font and encoding-artifact detection; they remain review-required and excluded from raw-page embeddings until a human approves them. Blank tender page 3 is also excluded. No Pinecone key is required.
+
+The repeatable retrieval benchmark covers English, Nepali, Romanized Nepali, and exact Contract ID lookup. The current hybrid index scores 5/5 at hit@3.
+
+Investigator endpoint:
+
+```text
+POST /api/v1/investigator/query/
+```
+
+Example request:
+
+```json
+{
+  "question": "Pokhara Ward 8 ko road project ko paisa kaha gayo?",
+  "project_id": "6f3ef140-e6b9-4d6b-915f-74080c804208",
+  "language": "auto"
+}
+```
+
+The verified local response routes this to `PROJECT_INVESTIGATION`, reports the NPR 800,000 allocation and the NPR 9,477,987.16 tender estimate with the correct evidence boundary, keeps award and payment unknown, and cites budget page 168, procurement page 1, and audit page 48.
+
+Current verified gates: 40 backend tests in both Django and Pytest, 8 frontend tests, Ruff lint/format, frontend lint, production build, migration drift check, dependency integrity, warning-free OpenAPI generation, 5/5 multilingual retrieval evaluation, live Chroma indexing, and live Ollama embedding/chat smoke tests.
 
 ## Dependency policy
 

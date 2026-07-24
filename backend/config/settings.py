@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     "procurement",
     "payments",
     "documents",
+    "rag",
+    "investigator",
 ]
 
 MIDDLEWARE = [
@@ -135,6 +137,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "config.pagination.EnvelopePageNumberPagination",
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "config.exceptions.api_exception_handler",
+    "DEFAULT_THROTTLE_RATES": {"investigator": "30/hour"},
 }
 
 SPECTACULAR_SETTINGS = {
@@ -144,6 +147,10 @@ SPECTACULAR_SETTINGS = {
     ),
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "ENUM_NAME_OVERRIDES": {
+        "SourceDocumentLanguageEnum": "documents.models.SourceDocument.Language",
+        "InvestigatorLanguageEnum": ("investigator.serializers.INVESTIGATOR_LANGUAGE_CHOICES"),
+    },
 }
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("MAX_UPLOAD_MB", "20")) * 1024 * 1024
@@ -156,4 +163,31 @@ TESSERACT_CMD = os.getenv("TESSERACT_CMD", "").strip()
 POPPLER_PATH = os.getenv("POPPLER_PATH", "").strip()
 EVIDENCE_MANIFEST = Path(
     os.getenv("EVIDENCE_MANIFEST", str(BASE_DIR.parent / "datasets" / "manifest.csv"))
+)
+
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").strip()
+OLLAMA_CHAT_MODEL = os.getenv("OLLAMA_CHAT_MODEL", "qwen2.5:3b").strip()
+OLLAMA_EMBEDDING_MODEL = os.getenv(
+    "OLLAMA_EMBEDDING_MODEL",
+    "nomic-embed-text-v2-moe",
+).strip()
+OLLAMA_EMBEDDING_QUERY_PREFIX = os.getenv(
+    "OLLAMA_EMBEDDING_QUERY_PREFIX",
+    "search_query: ",
+)
+OLLAMA_EMBEDDING_DOCUMENT_PREFIX = os.getenv(
+    "OLLAMA_EMBEDDING_DOCUMENT_PREFIX",
+    "search_document: ",
+)
+OLLAMA_TIMEOUT_SECONDS = int(os.getenv("OLLAMA_TIMEOUT_SECONDS", "45"))
+INVESTIGATOR_ENABLE_GENERATION = env_bool("INVESTIGATOR_ENABLE_GENERATION", default=True)
+INVESTIGATOR_TOP_K = int(os.getenv("INVESTIGATOR_TOP_K", "5"))
+RAG_CHUNK_TOKENS = int(os.getenv("RAG_CHUNK_TOKENS", "320"))
+RAG_CHUNK_OVERLAP_TOKENS = int(os.getenv("RAG_CHUNK_OVERLAP_TOKENS", "50"))
+
+VECTOR_DB_PROVIDER = os.getenv("VECTOR_DB_PROVIDER", "chroma").strip()
+CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "budget-darpan-evidence").strip()
+chroma_db_dir = Path(os.getenv("CHROMA_DB_DIR", "../chroma_db"))
+CHROMA_DB_DIR = (
+    chroma_db_dir if chroma_db_dir.is_absolute() else (BASE_DIR / chroma_db_dir).resolve()
 )

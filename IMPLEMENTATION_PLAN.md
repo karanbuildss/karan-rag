@@ -4,6 +4,8 @@
 > **Theme**: Local government budget transparency for Nepal
 > **Duration**: 60 hours
 
+> **Current implementation note (24 July 2026):** `README.md` is the authoritative build status and `AGENTS.md` is the local engineering contract. The later sections of this document preserve early product exploration; their illustrative municipalities and figures are not official data and must not be seeded or presented as facts. The implemented Phase 3A slice uses review-gated page chunks, hybrid Chroma/BM25-style retrieval, a direct typed provider layer, and the exact Ollama tag `qwen2.5:3b` rather than LangChain.
+
 ---
 
 ## 1. Tech Stack
@@ -13,11 +15,11 @@
 | Backend | Django 5.x + Django REST Framework |
 | Database | SQLite |
 | Frontend | React 18 + Vite + Tailwind CSS |
-| Mobile | React Native (Expo) — Phase 3 |
-| Vector DB | ChromaDB (persistent, local) |
+| Mobile | React Native (Expo) — future scope after the web demo is stable |
+| Vector DB | ChromaDB (persistent, local); optional Pinecone deployment adapter later |
 | Embeddings | Ollama `nomic-embed-text-v2-moe` (multilingual, ~100 languages) |
-| Chat LLM | Ollama `qwen2.5` (Nepali-friendly) or `llama3.2` |
-| RAG Framework | LangChain |
+| Chat LLM | Ollama `qwen2.5:3b` with a deterministic evidence-safe fallback |
+| RAG Framework | Direct typed vector-provider abstraction; no LangChain dependency |
 | OCR | Tesseract 5 (`nep+eng` language pack) |
 | Deployment | Render (Django backend + React static) |
 | LLM Server | Ollama (localhost:11434) |

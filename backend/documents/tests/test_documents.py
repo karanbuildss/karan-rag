@@ -18,7 +18,12 @@ from projects.models import Project
 from rest_framework.test import APIClient
 
 from documents.models import DocumentPage, ProjectDocumentLink, SourceDocument
-from documents.services import assess_text_quality, extract_document, import_evidence_manifest
+from documents.services import (
+    assess_text_quality,
+    extract_document,
+    extract_document_pages,
+    import_evidence_manifest,
+)
 from documents.services.extraction import _image_from_page
 
 
@@ -26,6 +31,16 @@ def make_text_pdf(text=""):
     pdf = pymupdf.open()
     page = pdf.new_page()
     if text:
+        page.insert_text((72, 72), text, fontsize=10)
+    payload = pdf.tobytes()
+    pdf.close()
+    return payload
+
+
+def make_multi_page_text_pdf(texts):
+    pdf = pymupdf.open()
+    for text in texts:
+        page = pdf.new_page()
         page.insert_text((72, 72), text, fontsize=10)
     payload = pdf.tobytes()
     pdf.close()
@@ -197,6 +212,37 @@ class TextQualityTests(TestCase):
         self.assertTrue(result.usable)
         self.assertGreaterEqual(result.score, 0.62)
 
+    def test_mixed_nepali_text_with_encoding_artifacts_is_sent_to_ocr(self):
+        corrupted = (
+            "आधिकारिक लेखापरीक्षण विवरण कÙलकाचोक कृČमा कüČटãéसन जाल्पा मार्ग वडा आठ पेश्की बाँकी विवरण " * 4
+        )
+
+        result = assess_text_quality(
+            corrupted,
+            language=SourceDocument.Language.MIXED,
+            min_chars=40,
+            min_score=0.62,
+        )
+
+        self.assertFalse(result.usable)
+        self.assertIn("font_encoding_artifacts_suspected", result.warnings)
+
+    def test_nepali_page_with_partial_legacy_font_header_is_sent_to_ocr(self):
+        mixed_legacy = (
+            "kf]v/f dxfgu/kflnsf jflif{s ah]6 tyf sfo{qmd cf=j= @)&&÷)&*\n"
+            "कार्यक्रम आयोजनाको नाम कार्यान्वयन हुने स्थान विनियोजन रकम " * 5
+        )
+
+        result = assess_text_quality(
+            mixed_legacy,
+            language=SourceDocument.Language.NEPALI,
+            min_chars=40,
+            min_score=0.62,
+        )
+
+        self.assertFalse(result.usable)
+        self.assertIn("legacy_nepali_font_suspected", result.warnings)
+
 
 class DocumentExtractionTests(TestCase):
     @classmethod
@@ -293,3 +339,36 @@ class DocumentExtractionTests(TestCase):
             poppler_path="C:\\Tools\\poppler\\Library\\bin",
             thread_count=1,
         )
+
+    def test_selected_page_extraction_does_not_process_the_whole_pdf(self):
+        text = (
+            "Official selected evidence page with reliable searchable text and enough "
+            "content for the quality gate to accept without OCR."
+        )
+        payload = make_multi_page_text_pdf([text, text, text])
+        with (
+            TemporaryDirectory() as media_root,
+            override_settings(
+                MEDIA_ROOT=media_root,
+                OCR_MIN_TEXT_CHARS=40,
+                OCR_MIN_QUALITY_SCORE=0.62,
+            ),
+        ):
+            document = self.create_document(payload)
+
+            with patch("documents.services.extraction._ocr_page") as ocr_page:
+                pages = extract_document_pages(
+                    document.id,
+                    [2],
+                    sections={2: "Selected evidence"},
+                )
+
+            ocr_page.assert_not_called()
+            self.assertEqual([page.page_number for page in pages], [2])
+            self.assertEqual(document.pages.count(), 1)
+            page = document.pages.get()
+            self.assertEqual(page.section, "Selected evidence")
+            self.assertEqual(page.review_status, DocumentPage.ReviewStatus.AUTO_ACCEPTED)
+            record = document.extraction_records.get()
+            self.assertEqual(record.details["requested_pages"], [2])
+            self.assertTrue(record.details["partial_extraction"])

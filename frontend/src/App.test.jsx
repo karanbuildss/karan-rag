@@ -23,6 +23,7 @@ vi.mock('recharts', () => ({
 }))
 
 vi.mock('./api/client', () => ({
+  askInvestigator: vi.fn(),
   getDocument: vi.fn(),
   getDocumentPage: vi.fn(),
   getDocuments: vi.fn(),

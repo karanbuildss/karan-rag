@@ -23,6 +23,9 @@ PyMuPDF==1.28.0
 pdf2image==1.17.0
 pytesseract==0.3.13
 
+# Phase 3 local multilingual retrieval; Ollama is accessed through its local HTTP API
+chromadb==1.5.9
+
 # Quality gates
 pytest==9.1.1
 pytest-django==4.12.0

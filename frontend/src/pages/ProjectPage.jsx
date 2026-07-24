@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { getProjectMoneyTrail } from '../api/client'
 import ProjectEvidence from '../components/ProjectEvidence'
+import ProjectInvestigator from '../components/ProjectInvestigator'
 import SiteFooter from '../components/SiteFooter'
 import SiteHeader from '../components/SiteHeader'
 
@@ -380,6 +381,7 @@ export default function ProjectPage() {
             </Suspense>
           </div>
         </section>
+        <ProjectInvestigator projectId={projectId} />
         <ProjectEvidence
           projectId={projectId}
           synthetic={project.data_classification === 'synthetic_demo'}

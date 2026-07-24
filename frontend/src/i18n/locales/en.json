@@ -156,6 +156,40 @@
     },
     "milestonesUnknown": "No official milestone or physical-progress record has been found yet."
   },
+  "investigator": {
+    "eyebrow": "Evidence-grounded civic investigator",
+    "title": "Ask where the project money went",
+    "description": "Ask in English, Nepali, or Romanized Nepali. Exact amounts come from the project database; document claims remain attached to cited pages.",
+    "safety": "Budget Darpan does not accuse. It identifies patterns and evidence that may require further review.",
+    "questionLabel": "Your question",
+    "placeholder": "For example: Pokhara Ward 8 ko road project ko paisa kaha gayo?",
+    "suggestionLabel": "Suggested investigation questions",
+    "suggestions": {
+      "moneyJourney": "Pokhara Ward 8 ko road project ko paisa kaha gayo?",
+      "payment": "How much was paid?",
+      "audit": "What does the audit report say?"
+    },
+    "submit": "Investigate the evidence",
+    "investigating": "Checking facts and sources…",
+    "error": "The investigator is temporarily unavailable. You can still inspect the money trail and source documents.",
+    "answerTitle": "Evidence-bounded answer",
+    "language": "Detected language: {{language}}",
+    "citationsTitle": "Open the supporting evidence",
+    "citationPage": "Page {{page}} · {{section}}",
+    "limitationsTitle": "What remains unknown",
+    "provenance": "Structured values: relational database · retrieval: {{retrieval}} · response: {{generation}}",
+    "sourceKind": {
+      "curated_project_evidence": "Reviewed evidence note",
+      "reviewed_document_page": "Accepted PDF text"
+    },
+    "routes": {
+      "DATABASE_QUERY": "Database facts",
+      "DOCUMENT_RAG": "Document evidence",
+      "PROJECT_INVESTIGATION": "Project investigation",
+      "GENERAL_HELP": "Investigator help",
+      "INSUFFICIENT_EVIDENCE": "Insufficient evidence"
+    }
+  },
   "evidence": {
     "eyebrow": "Traceable evidence",
     "title": "Source documents and citations",

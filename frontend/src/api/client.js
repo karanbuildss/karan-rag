@@ -21,6 +21,15 @@ export async function getProjectEvidence(projectId) {
   return response.data
 }
 
+export async function askInvestigator({ question, projectId, language = 'auto' }) {
+  const response = await api.post(
+    '/investigator/query/',
+    { question, project_id: projectId, language },
+    { timeout: 65000 },
+  )
+  return response.data
+}
+
 export async function getDocuments(params = {}) {
   const response = await api.get('/documents/', { params })
   return response.data

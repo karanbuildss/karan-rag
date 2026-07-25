@@ -2,6 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://budget-darpan-api.onrender.com/api/:path*"
+    },
+    {
+      "source": "/identity/:path*",
+      "destination": "https://budget-darpan-identity.onrender.com/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

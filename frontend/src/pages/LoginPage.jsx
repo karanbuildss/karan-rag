@@ -15,17 +15,24 @@ export default function LoginPage() {
   const [mode, setMode] = useState('login')
   const [form, setForm] = useState({ username: '', email: '', password: '' })
   const [state, setState] = useState('idle')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const update = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
 
   const submit = async (event) => {
     event.preventDefault()
     setState('loading')
+    setErrorMessage('')
     try {
       if (mode === 'register') await registerAccount(form)
       else await loginAccount({ username: form.username, password: form.password })
       navigate(`/verify?returnTo=${encodeURIComponent(returnTo)}`)
-    } catch {
+    } catch (requestError) {
+      const responseErrors = requestError.response?.data?.errors
+      const detail = Array.isArray(responseErrors)
+        ? responseErrors.map((item) => item.message).filter(Boolean).join(' ')
+        : ''
+      setErrorMessage(detail || t('account.error'))
       setState('error')
     }
   }
@@ -48,7 +55,7 @@ export default function LoginPage() {
                 aria-selected={mode === item}
                 className={mode === item ? 'discovery-tab discovery-tab-active' : 'discovery-tab'}
                 key={item}
-                onClick={() => { setMode(item); setState('idle') }}
+                onClick={() => { setMode(item); setState('idle'); setErrorMessage('') }}
                 role="tab"
                 type="button"
               >
@@ -69,9 +76,10 @@ export default function LoginPage() {
             )}
             <label className="filter-field">
               <span>{t('account.password')}</span>
-              <input autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength="10" name="password" onChange={update} required type="password" value={form.password} />
+              <input aria-describedby="account-password-hint" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength="10" name="password" onChange={update} required type="password" value={form.password} />
             </label>
-            {state === 'error' && <p className="source-warning" role="alert">{t('account.error')}</p>}
+            <p className="text-xs leading-5 text-muted" id="account-password-hint">{t('account.passwordHint')}</p>
+            {state === 'error' && <p className="source-warning" role="alert">{errorMessage}</p>}
             <button className="primary-action" disabled={state === 'loading'} type="submit">
               {state === 'loading' ? t('account.working') : t(`account.${mode}Action`)}
             </button>

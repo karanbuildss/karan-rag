@@ -74,6 +74,7 @@ import {
   getProjectMoneyTrail,
   getProjects,
   getSectors,
+  registerAccount,
   startMockVerification,
   confirmMockVerification,
   completeVerification,
@@ -845,6 +846,28 @@ describe('Budget Darpan foundation', () => {
     expect(await screen.findByDisplayValue('123456')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Confirm verification' }))
     expect(await screen.findByText('Mock verification completed')).toBeInTheDocument()
+  })
+
+  it('shows the precise registration validation error returned by the API', async () => {
+    window.history.replaceState({}, '', '/login')
+    registerAccount.mockRejectedValueOnce({
+      response: {
+        data: {
+          errors: [{ code: 'username_taken', field: 'username', message: 'An account with this username already exists.' }],
+        },
+      },
+    })
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(await screen.findByRole('tab', { name: 'Create account' }))
+    await user.type(screen.getByLabelText('Username'), 'existing-user')
+    await user.type(screen.getByLabelText('Password'), 'safe-demo-password')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'An account with this username already exists.',
+    )
   })
 
   it('protects the document review screen from public accounts', async () => {

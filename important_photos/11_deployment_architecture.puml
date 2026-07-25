@@ -1,7 +1,7 @@
 @startuml BudgetDarpanDeployment
 !include _theme.puml
 title Budget Darpan — Deployment Architecture
-caption Fully verified local demo and realistic cloud-ready target
+caption Live Vercel + Render + Neon deployment with a separate full local AI mode
 left to right direction
 
 node "Presentation Laptop — Verified Demo" as Laptop #E8F4F1 {
@@ -15,18 +15,25 @@ node "Presentation Laptop — Verified Demo" as Laptop #E8F4F1 {
   folder "Ignored local PDFs / media" as LocalMedia
 }
 
-cloud "Cloud Preview / Future Production" as Cloud BLUESOFT {
-  node "Vercel / Static CDN" as Vercel {
-    artifact "React production build" as CloudUI
+cloud "Live Public Deployment" as Cloud BLUESOFT {
+  node "Vercel — budget-darpan-nepal" as Vercel {
+    artifact "React + Vite SPA\nHTTPS + React Router rewrites" as CloudUI
+    component "Same-origin reverse proxy\n/api/* · /identity/*" as EdgeProxy
   }
-  node "Render / Railway / Container Platform" as Compute {
-    artifact "Django API + Gunicorn" as CloudAPI
-    artifact "Mock Identity Service" as CloudID
+  node "Render — Singapore / Free" as Compute {
+    artifact "budget-darpan-api\nDjango DRF + Gunicorn" as CloudAPI
+    artifact "budget-darpan-identity\nIndependent Django service" as CloudID
   }
-  database "Managed PostgreSQL\nNeon / Railway / Render" as Postgres
-  cloud "Pinecone\nvector index" as CloudVector
-  cloud "S3-compatible object storage\nsource PDFs and evidence" as ObjectStore
-  cloud "Hosted multilingual\nembedding/chat provider\nor paid Ollama machine" as HostedAI
+  database "Neon PostgreSQL\nproduction branch" as Postgres
+  folder "Hosted evidence catalogue\nmetadata + reviewed facts + official URLs" as HostedCatalogue
+}
+
+cloud "Official Government Sources\nmunicipal sites · OAG · e-GP" as Sources
+
+package "Future Production Additions — Not Live" #F7F3EE {
+  cloud "S3-compatible object storage\npermitted source PDFs" as ObjectStore
+  cloud "Hosted multilingual embeddings/chat\nor paid Ollama machine" as HostedAI
+  cloud "Pinecone\noptional vector provider" as CloudVector
 }
 
 actor "Browser" as Browser
@@ -40,26 +47,34 @@ LocalAPI --> LocalOCR
 LocalAPI --> LocalMedia
 
 Browser --> CloudUI : HTTPS public preview
-CloudUI --> CloudAPI : /api/v1
-CloudUI --> CloudID : verification start/confirm
-CloudAPI --> CloudID : secure code exchange
-CloudAPI --> Postgres
-CloudAPI --> CloudVector
-CloudAPI --> ObjectStore
-CloudAPI --> HostedAI
+CloudUI --> EdgeProxy : first-party browser requests
+EdgeProxy --> CloudAPI : HTTPS /api/v1\nsession cookie + CSRF
+EdgeProxy --> CloudID : HTTPS verification\nstart + confirm
+CloudAPI --> CloudID : server-to-server code exchange\nclient secret + RS256 verification
+CloudAPI --> Postgres : projects · documents · users\nfeedback · anomalies · chat
+CloudAPI --> HostedCatalogue
+HostedCatalogue --> Postgres
+CloudUI --> Sources : open official source URL
+
+CloudAPI ..> CloudVector : future full hosted RAG
+CloudAPI ..> ObjectStore : future durable PDF viewer
+CloudAPI ..> HostedAI : future hosted embeddings/generation
 
 note bottom of Laptop
-  Current complete, tested configuration.
-  No API keys or documents leave the laptop.
+  Full local evidence mode:
+  OCR + reviewed PDFs + embeddings + Chroma
+  + optional Qwen generation.
 end note
 
 note bottom of Cloud
-  Free web tiers have cold starts, ephemeral disks
-  and insufficient resources for current Ollama models.
-  Full hosted RAG needs durable storage and hosted AI.
+  Live judge preview: structured APIs, PostgreSQL,
+  evidence catalogue, official links, deterministic
+  evidence-safe investigator, auth and mock verification.
+  Render Free may cold-start; its disk is ephemeral.
 end note
 
 legend bottom
+  Solid arrow = deployed and active · Dashed arrow = future addition
   Environment secrets live in ignored .env files locally
   and platform secret managers in deployment—never in Git or frontend code.
 endlegend

@@ -1,7 +1,23 @@
 import axios from 'axios'
 
+export function resolveApiBaseUrls({ hostname = '', apiUrl = '', identityUrl = '' } = {}) {
+  const usesVercelProxy = hostname === 'vercel.app' || hostname.endsWith('.vercel.app')
+  return {
+    api: usesVercelProxy ? '/api/v1' : (apiUrl || 'http://localhost:8000/api/v1'),
+    identity: usesVercelProxy
+      ? '/identity/api/v1'
+      : (identityUrl || 'http://localhost:8001/api/v1'),
+  }
+}
+
+const deploymentUrls = resolveApiBaseUrls({
+  hostname: typeof window === 'undefined' ? '' : window.location.hostname,
+  apiUrl: import.meta.env.VITE_API_URL,
+  identityUrl: import.meta.env.VITE_MOCK_IDENTITY_URL,
+})
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: deploymentUrls.api,
   headers: { Accept: 'application/json' },
   timeout: 5000,
   withCredentials: true,
@@ -11,7 +27,7 @@ const api = axios.create({
 })
 
 const mockIdentityApi = axios.create({
-  baseURL: import.meta.env.VITE_MOCK_IDENTITY_URL || 'http://localhost:8001/api/v1',
+  baseURL: deploymentUrls.identity,
   headers: { Accept: 'application/json' },
   timeout: 5000,
 })

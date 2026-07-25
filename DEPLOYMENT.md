@@ -89,8 +89,8 @@ https://YOUR-API.onrender.com/api/docs/
 4. Add these environment variables:
 
 ```text
-VITE_API_URL=https://YOUR-API.onrender.com/api/v1
-VITE_MOCK_IDENTITY_URL=https://YOUR-IDENTITY.onrender.com/api/v1
+VITE_API_URL=/api/v1
+VITE_MOCK_IDENTITY_URL=/identity/api/v1
 VITE_DEFAULT_LANGUAGE=en
 VITE_DEMO_PROJECT_ID=e4d7eeb5-50f8-4a67-9c44-477d121f765d
 VITE_ENABLE_VOICE=true
@@ -99,7 +99,7 @@ VITE_ENABLE_MOCK_VERIFICATION=true
 
 5. Deploy, copy the final Vercel URL, and replace the temporary frontend URL in the Render CORS settings with that exact origin. Do not add a trailing slash.
 
-`frontend/vercel.json` preserves React routes such as `/projects/:id`, `/documents/:id`, and `/investigator` when opened directly.
+`frontend/vercel.json` preserves React routes such as `/projects/:id`, `/documents/:id`, and `/investigator` when opened directly. It also proxies `/api/*` and `/identity/*` to the two Render services. Keep those two rewrite destinations aligned with the actual Render service URLs. The same-origin proxy makes Django session and CSRF cookies first-party instead of relying on browser support for cross-site cookies.
 
 ## 5. Enable hosted RAG deliberately
 

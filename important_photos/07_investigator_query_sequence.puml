@@ -1,20 +1,21 @@
 @startuml BudgetDarpanInvestigatorSequence
 !include _theme.puml
 title Budget Darpan — Investigator Query Sequence
-caption Runtime routing keeps structured facts and document claims separate
+caption The live Render API routes safely; full vector retrieval is available in local mode
 autonumber
 
 actor Citizen
-participant "React Investigator" as UI
-participant "DRF Query API" as API
+participant "React Investigator\nVercel" as UI
+participant "DRF Query API\nRender" as API
 participant "Language Detector" as Lang
 participant "Intent Router" as Router
+participant "Capability Gate\nhosted / local" as Mode
 participant "Fact Selector" as Facts
 participant "Hybrid Retriever" as Retrieval
-database "Relational DB" as DB
-database "Chroma / Pinecone" as Vector
+database "Neon PostgreSQL\n(SQLite locally)" as DB
+database "Local Chroma\n(Pinecone optional)" as Vector
 participant "Safe Composer" as Composer
-participant "Optional Ollama Chat" as Ollama
+participant "Optional Local Ollama Chat" as Ollama
 
 Citizen -> UI : type / edit voice transcript
 UI -> API : POST /api/v1/investigator/query\nquestion + project_id + session_id?
@@ -22,6 +23,7 @@ API -> Lang : detect_language(question)
 Lang --> API : en | ne | romanized_ne
 API -> Router : route_question(question, has_project)
 Router --> API : explicit InvestigationRoute
+API -> Mode : inspect configured capabilities
 
 alt DATABASE_QUERY
   API -> Facts : select exact project facts
@@ -29,26 +31,36 @@ alt DATABASE_QUERY
   DB --> Facts : Decimal values + provenance
   Facts --> API : structured facts
 else DOCUMENT_RAG
-  API -> Retrieval : project-filtered evidence query
-  Retrieval -> Vector : semantic candidates
-  Vector --> Retrieval : chunks + scores + metadata
-  Retrieval -> DB : page text, links and review state
-  DB --> Retrieval : accepted cited pages
-  Retrieval --> API : ranked citations
+  alt full local RAG available
+    API -> Retrieval : project-filtered evidence query
+    Retrieval -> Vector : semantic candidates
+    Vector --> Retrieval : chunks + scores + metadata
+    Retrieval -> DB : page text, links and review state
+    DB --> Retrieval : accepted cited pages
+    Retrieval --> API : ranked citations
+  else hosted Render preview
+    API -> DB : reviewed evidence metadata + official URLs
+    DB --> API : deterministic cited evidence/facts
+  end
 else ANOMALY_EXPLANATION
   API -> DB : active flags and rule payload
   DB --> API : reason + data + threshold + recommendation
 else PROJECT_INVESTIGATION
   API -> Facts : full money trail
-  API -> Retrieval : allocation/audit/procurement evidence
   Facts -> DB
-  Retrieval -> Vector
   DB --> Facts
-  Vector --> Retrieval
+  alt full local RAG available
+    API -> Retrieval : allocation/audit/procurement evidence
+    Retrieval -> Vector
+    Vector --> Retrieval
+  else hosted Render preview
+    API -> DB : reviewed catalogue evidence
+    DB --> API : citations + official URLs
+  end
 end
 
 API -> Composer : route + language + facts + citations
-opt generation enabled and evidence bounded
+opt local generation enabled and evidence bounded
   Composer -> Ollama : context-limited prompt
   Ollama --> Composer : candidate wording
   Composer -> Composer : reject unsupported amounts/dates

@@ -63,9 +63,9 @@ note right of RAGEval
 end note
 note right of Backend
   Latest verified:
-  79 backend tests
-  81 whole-repository Python tests
-  19 frontend tests
+  86 whole-repository Python tests
+  24 frontend tests
+  Live frontend/API/identity health = HTTP 200
 end note
 
 note bottom

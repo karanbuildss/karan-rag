@@ -7,20 +7,33 @@ This folder contains editable PlantUML sources for the system report, pitch deck
 | File | Best use |
 |---|---|
 | `01_system_context_and_use_cases.puml` | Problem, users, and product scope |
-| `02_overall_system_architecture.puml` | Main technical architecture slide |
+| `02_overall_system_architecture.puml` | Main technical architecture and hosted/local boundary |
 | `03_end_to_end_system_flowchart.puml` | Complete citizen journey |
 | `04_development_methodology.puml` | Development methodology/report |
 | `05_domain_class_diagram.puml` | Database/domain design |
-| `06_rag_pipeline.puml` | RAG and bilingual AI explanation |
-| `07_investigator_query_sequence.puml` | Runtime AI question flow |
+| `06_rag_pipeline.puml` | Full local RAG and hosted evidence-safe fallback |
+| `07_investigator_query_sequence.puml` | Runtime AI question flow in hosted and local modes |
 | `08_document_ingestion_pipeline.puml` | PDF extraction and OCR flow |
-| `09_mock_identity_verification.puml` | Demo Nagarik-style verification |
+| `09_mock_identity_verification.puml` | Deployed mock Nagarik-style verification |
 | `10_anomaly_detection_pipeline.puml` | Explainable anomaly system |
-| `11_deployment_architecture.puml` | Local demo and cloud roadmap |
+| `11_deployment_architecture.puml` | Live Vercel/Render/Neon topology and future additions |
 | `12_testing_and_evaluation_strategy.puml` | Testing, F1, retrieval metrics |
 | `13_data_provenance_and_safety.puml` | Official vs synthetic trust boundary |
 
 `_theme.puml` contains the common visual style and is included by every diagram.
+
+## Current deployment represented in the diagrams
+
+```text
+React SPA/proxy: Vercel — https://budget-darpan-nepal.vercel.app
+Public API:      Render — https://budget-darpan-api.onrender.com
+Mock identity:   Render — https://budget-darpan-identity.onrender.com
+Relational data: Neon PostgreSQL
+Hosted AI mode:  deterministic evidence-safe composer; generation disabled
+Full local mode: Ollama embeddings + Chroma + optional Qwen + OCR corpus
+```
+
+In architecture diagrams, a **solid arrow** is an active deployed/local connection. A **dashed arrow** marks an optional future production addition such as Pinecone, hosted AI, or S3-compatible source-document storage.
 
 ## VS Code shortcuts
 

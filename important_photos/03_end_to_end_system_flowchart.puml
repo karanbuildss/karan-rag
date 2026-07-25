@@ -21,9 +21,13 @@ if (Ask an investigator question?) then (yes)
   :Detect English, Devanagari Nepali\nor Romanized Nepali;
   :Route question intent;
   if (Exact structured fact?) then (yes)
-    :Query relational database;
+    :Query Neon PostgreSQL\n(SQLite in local mode);
   elseif (Document claim?) then (yes)
-    :Retrieve project-filtered\naccepted document chunks;
+    if (Full local RAG available?) then (yes)
+      :Retrieve project-filtered\naccepted Chroma document chunks;
+    else (hosted preview)
+      :Use reviewed evidence metadata,\ncited facts and official source URLs;
+    endif
   elseif (Anomaly question?) then (yes)
     :Read deterministic rule, values,\nthreshold and source references;
   else (combined investigation)
@@ -65,5 +69,6 @@ legend right
   | Evidence first | Claims keep provenance |
   | Privacy | No raw citizenship in Budget Darpan |
   | Safety | Anomaly is not proven corruption |
+  | Deployment | Vercel SPA + Render services + Neon DB |
 endlegend
 @enduml

@@ -508,6 +508,7 @@
     "username": "Username",
     "email": "Email (optional)",
     "password": "Password",
+    "passwordHint": "Use at least 10 characters. Do not reuse a personal password for this public demo.",
     "error": "The account request could not be completed. Check the details and try again.",
     "working": "Checking securely…",
     "loginAction": "Sign in",

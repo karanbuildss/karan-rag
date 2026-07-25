@@ -45,6 +45,7 @@ export default function ProjectPage() {
   const { projectId } = useParams()
   const { i18n, t } = useTranslation()
   const [trail, setTrail] = useState(null)
+  const [feedbackAccount, setFeedbackAccount] = useState(null)
   const [state, setState] = useState('loading')
   const [retryKey, setRetryKey] = useState(0)
   const isNepali = i18n.resolvedLanguage === 'np'
@@ -175,6 +176,11 @@ export default function ProjectPage() {
                   {title}
                 </h1>
                 <p className="mt-5 max-w-3xl text-base leading-7 text-muted">{description}</p>
+                {feedbackAccount?.identity_verified && (
+                  <a className="primary-action mt-6" href="#accountability">
+                    {t('feedback.jumpToForm')}
+                  </a>
+                )}
               </div>
               <div className="progress-panel">
                 <div className="flex items-end justify-between gap-4">
@@ -415,7 +421,7 @@ export default function ProjectPage() {
           projectId={projectId}
           synthetic={project.data_classification === 'synthetic_demo'}
         />
-        <ProjectAccountability projectId={projectId} />
+        <ProjectAccountability onAccountLoaded={setFeedbackAccount} projectId={projectId} />
       </main>
       <SiteFooter />
     </div>

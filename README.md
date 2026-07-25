@@ -340,7 +340,7 @@ No dependency or API key was added for this phase. The slice reuses Django filte
 
 The lightweight production seed registers 35 official source metadata records and 8 reviewed FY 2081/82 budget/spending facts for Kathmandu, Hetauda, and Rupa. Their official URLs and cited pages remain public on Render even though the large raw corpus stays outside Git. The local research workflow still preserves, hashes, extracts, and reviews the original files before RAG ingestion.
 
-Current release gates: 86 whole-repository Python tests, 28 frontend tests, Ruff lint/format, frontend lint, production build, and migration drift check. A production-catalog test verifies 35 official source records, 8 reviewed cited facts, and three municipalities in the FY 2081/82 comparison.
+Current release gates: 86 whole-repository Python tests, 29 frontend tests, Ruff lint/format, frontend lint, production build, and migration drift check. A production-catalog test verifies 35 official source records, 8 reviewed cited facts, and three municipalities in the FY 2081/82 comparison.
 
 ## Phase 4 verification
 

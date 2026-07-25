@@ -58,7 +58,7 @@ function RatingField({ label, name, onChange, value }) {
   )
 }
 
-export default function ProjectAccountability({ projectId }) {
+export default function ProjectAccountability({ onAccountLoaded, projectId }) {
   const { i18n, t } = useTranslation()
   const [account, setAccount] = useState(null)
   const [summary, setSummary] = useState(null)
@@ -79,6 +79,7 @@ export default function ProjectAccountability({ projectId }) {
       getAnomalies({ project: projectId, status: 'active', page_size: 20 }),
     ]).then(([accountResult, feedbackResult, summaryResult, anomalyResult]) => {
       setAccount(accountResult.data)
+      onAccountLoaded?.(accountResult.data)
       const owned = (feedbackResult.data || []).find((item) => item.can_edit)
       if (owned) {
         setExisting(owned)
@@ -87,7 +88,7 @@ export default function ProjectAccountability({ projectId }) {
       setSummary(summaryResult.data)
       setFlags(anomalyResult.data || [])
     }).catch(() => {})
-  }, [projectId])
+  }, [onAccountLoaded, projectId])
 
   const updateForm = (event) => {
     const { checked, name, type, value } = event.target

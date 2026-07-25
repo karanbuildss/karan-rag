@@ -610,6 +610,7 @@
     "average": "Average completion: {{value}}/5",
     "login": "Sign in to provide accountable feedback.",
     "verify": "Complete mock verification before rating this project.",
+    "jumpToForm": "Give verified project feedback",
     "completion": "Completion",
     "quality": "Quality",
     "usefulness": "Usefulness",

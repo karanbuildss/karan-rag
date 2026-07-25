@@ -410,6 +410,24 @@ describe('Budget Darpan foundation', () => {
     expect(screen.queryByText(/synthetic demo figures/i)).not.toBeInTheDocument()
   })
 
+  it('shows a project feedback shortcut only after citizen verification', async () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/projects/6f3ef140-e6b9-4d6b-915f-74080c804208',
+    )
+    getProjectMoneyTrail.mockResolvedValue(moneyTrail)
+    getCurrentAccount.mockResolvedValue({
+      data: { authenticated: true, identity_verified: true },
+    })
+    render(<App />)
+
+    const shortcut = await screen.findByRole('link', {
+      name: 'Give verified project feedback',
+    })
+    expect(shortcut).toHaveAttribute('href', '#accountability')
+  })
+
   it('distinguishes a Rupa payment date from an unpublished payment amount', async () => {
     window.history.replaceState(
       {},

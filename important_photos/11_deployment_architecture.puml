@@ -18,7 +18,7 @@ node "Presentation Laptop — Verified Demo" as Laptop #E8F4F1 {
 cloud "Live Public Deployment" as Cloud BLUESOFT {
   node "Vercel — budget-darpan-nepal" as Vercel {
     artifact "React + Vite SPA\nHTTPS + React Router rewrites" as CloudUI
-    component "Same-origin reverse proxy\n/api/* · /identity/*" as EdgeProxy
+    component "Allowlisted Vercel Function\n/api/proxy" as EdgeProxy
   }
   node "Render — Singapore / Free" as Compute {
     artifact "budget-darpan-api\nDjango DRF + Gunicorn" as CloudAPI

@@ -1,13 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/proxy.js": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://budget-darpan-api.onrender.com/api/:path*"
+      "source": "/api/v1/:path*",
+      "destination": "/api/proxy?__service=backend&__path=/api/v1/:path*"
     },
     {
       "source": "/identity/:path*",
-      "destination": "https://budget-darpan-identity.onrender.com/:path*"
+      "destination": "/api/proxy?__service=identity&__path=/:path*"
     },
     {
       "source": "/:path((?!api/|identity/).*)",

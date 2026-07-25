@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import api, { rejectUnexpectedHtml, resolveApiBaseUrls } from './client'
+import api, { rejectUnexpectedHtml, resolveApiBaseUrls, routeViaVercelProxy } from './client'
 
 describe('API session security', () => {
   it('sends cookies and the CSRF header across local development ports', () => {
@@ -16,8 +16,9 @@ describe('API session security', () => {
       apiUrl: 'https://budget-darpan-api.onrender.com/api/v1',
       identityUrl: 'https://budget-darpan-identity.onrender.com/api/v1',
     })).toEqual({
-      api: '/api/v1',
-      identity: '/identity/api/v1',
+      api: '/api/proxy',
+      identity: '/api/proxy',
+      usesVercelProxy: true,
     })
   })
 
@@ -29,6 +30,23 @@ describe('API session security', () => {
     })).toEqual({
       api: 'http://localhost:8000/api/v1',
       identity: 'http://localhost:8001/api/v1',
+      usesVercelProxy: false,
+    })
+  })
+
+  it('routes backend requests through the allowlisted Vercel function', () => {
+    expect(routeViaVercelProxy({
+      baseURL: '/api/proxy',
+      url: '/projects/',
+      params: { municipality: 'PKR' },
+    }, 'backend')).toMatchObject({
+      baseURL: '',
+      url: '/api/proxy',
+      params: {
+        municipality: 'PKR',
+        __service: 'backend',
+        __path: '/api/v1/projects/',
+      },
     })
   })
 

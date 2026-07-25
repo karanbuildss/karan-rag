@@ -12,12 +12,12 @@ participant "Render Budget Darpan API\nbudget-darpan-api" as API
 database "Neon PostgreSQL\nCitizenProfile + VerificationRecord" as DB
 
 Citizen -> UI : enter phone + citizenship number
-UI -> IDP : Vercel /identity proxy\nPOST /verification/start
+UI -> IDP : Vercel /api/proxy (identity)\nPOST /verification/start
 IDP -> Seeds : constant-time fictional match
 Seeds --> IDP : stable subject + municipality + ward
 IDP --> UI : challenge_id + optional demo OTP hint
 Citizen -> UI : enter OTP
-UI -> IDP : Vercel /identity proxy\nPOST /verification/confirm
+UI -> IDP : Vercel /api/proxy (identity)\nPOST /verification/confirm
 IDP --> UI : one-time authorization code (60 s)
 UI -> API : POST /api/v1/verification/complete/\nwith one-time code + session/CSRF
 API -> IDP : backend POST /verification/exchange\n+ shared client secret

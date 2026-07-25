@@ -54,7 +54,7 @@ Editable PlantUML sources for the system context, architecture, end-to-end flow,
 
 ## Deployment
 
-The live preview uses [Vercel](https://budget-darpan-nepal.vercel.app) for the React SPA and same-origin API/identity proxy, [Render](https://budget-darpan-api.onrender.com/api/v1/health/) for the Django API, a separate [Render identity service](https://budget-darpan-identity.onrender.com/api/v1/health/), and Neon PostgreSQL for persistent relational data. The same-origin proxy keeps browser session and CSRF cookies first-party. The repository includes the matching Render Blueprint and Vercel routing. Follow [DEPLOYMENT.md](DEPLOYMENT.md) for environment variables, secret handling, health checks, and the current boundary between the hosted deterministic investigator and the full local Ollama/Chroma/OCR mode.
+The live preview uses [Vercel](https://budget-darpan-nepal.vercel.app) for the React SPA and an allowlisted same-origin API/identity function, [Render](https://budget-darpan-api.onrender.com/api/v1/health/) for the Django API, a separate [Render identity service](https://budget-darpan-identity.onrender.com/api/v1/health/), and Neon PostgreSQL for persistent relational data. The same-origin function keeps browser session and CSRF cookies first-party. The repository includes the matching Render Blueprint and Vercel routing. Follow [DEPLOYMENT.md](DEPLOYMENT.md) for environment variables, secret handling, health checks, and the current boundary between the hosted deterministic investigator and the full local Ollama/Chroma/OCR mode.
 
 ## Local setup
 
@@ -340,7 +340,7 @@ No dependency or API key was added for this phase. The slice reuses Django filte
 
 The lightweight production seed registers 35 official source metadata records and 8 reviewed FY 2081/82 budget/spending facts for Kathmandu, Hetauda, and Rupa. Their official URLs and cited pages remain public on Render even though the large raw corpus stays outside Git. The local research workflow still preserves, hashes, extracts, and reviews the original files before RAG ingestion.
 
-Current release gates: 86 whole-repository Python tests, 25 frontend tests, Ruff lint/format, frontend lint, production build, and migration drift check. A production-catalog test verifies 35 official source records, 8 reviewed cited facts, and three municipalities in the FY 2081/82 comparison.
+Current release gates: 86 whole-repository Python tests, 28 frontend tests, Ruff lint/format, frontend lint, production build, and migration drift check. A production-catalog test verifies 35 official source records, 8 reviewed cited facts, and three municipalities in the FY 2081/82 comparison.
 
 ## Phase 4 verification
 

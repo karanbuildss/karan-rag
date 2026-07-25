@@ -3,10 +3,11 @@ import axios from 'axios'
 export function resolveApiBaseUrls({ hostname = '', apiUrl = '', identityUrl = '' } = {}) {
   const usesVercelProxy = hostname === 'vercel.app' || hostname.endsWith('.vercel.app')
   return {
-    api: usesVercelProxy ? '/api/v1' : (apiUrl || 'http://localhost:8000/api/v1'),
+    api: usesVercelProxy ? '/api/proxy' : (apiUrl || 'http://localhost:8000/api/v1'),
     identity: usesVercelProxy
-      ? '/identity/api/v1'
+      ? '/api/proxy'
       : (identityUrl || 'http://localhost:8001/api/v1'),
+    usesVercelProxy,
   }
 }
 
@@ -19,7 +20,7 @@ const deploymentUrls = resolveApiBaseUrls({
 const api = axios.create({
   baseURL: deploymentUrls.api,
   headers: { Accept: 'application/json' },
-  timeout: 5000,
+  timeout: 65000,
   withCredentials: true,
   withXSRFToken: true,
   xsrfCookieName: 'csrftoken',
@@ -29,8 +30,27 @@ const api = axios.create({
 const mockIdentityApi = axios.create({
   baseURL: deploymentUrls.identity,
   headers: { Accept: 'application/json' },
-  timeout: 5000,
+  timeout: 65000,
 })
+
+export function routeViaVercelProxy(config, service) {
+  const path = config.url || '/'
+  return {
+    ...config,
+    baseURL: '',
+    url: '/api/proxy',
+    params: {
+      ...config.params,
+      __service: service,
+      __path: `/api/v1${path.startsWith('/') ? path : `/${path}`}`,
+    },
+  }
+}
+
+if (deploymentUrls.usesVercelProxy) {
+  api.interceptors.request.use((config) => routeViaVercelProxy(config, 'backend'))
+  mockIdentityApi.interceptors.request.use((config) => routeViaVercelProxy(config, 'identity'))
+}
 
 export function rejectUnexpectedHtml(response) {
   const contentType = response.headers?.['content-type'] || ''

@@ -97,9 +97,11 @@ VITE_ENABLE_VOICE=true
 VITE_ENABLE_MOCK_VERIFICATION=true
 ```
 
+The two URL variables remain useful for local or non-Vercel builds. On a `*.vercel.app` deployment, the frontend deliberately sends both services through the same-origin `/api/proxy` Vercel Function.
+
 5. Deploy, copy the final Vercel URL, and replace the temporary frontend URL in the Render CORS settings with that exact origin. Do not add a trailing slash.
 
-`frontend/vercel.json` preserves React routes such as `/projects/:id`, `/documents/:id`, and `/investigator` when opened directly. It also proxies `/api/*` and `/identity/*` to the two Render services. Keep those two rewrite destinations aligned with the actual Render service URLs. The same-origin proxy makes Django session and CSRF cookies first-party instead of relying on browser support for cross-site cookies.
+`frontend/vercel.json` preserves React routes such as `/projects/:id`, `/documents/:id`, and `/investigator` when opened directly. `frontend/api/proxy.js` is a same-origin Vercel Function with a fixed allowlist for the Budget Darpan API and mock identity service; it is not an open proxy. This makes Django session and CSRF cookies first-party instead of relying on browser support for cross-site cookies. The function allows up to 60 seconds for Render Free cold starts.
 
 ## 5. Enable hosted RAG deliberately
 
@@ -141,6 +143,7 @@ The repository intentionally excludes downloaded government PDFs and runtime upl
 4. Ask one English, Nepali, and Romanized Nepali question.
 5. Register, match the fictional identity, confirm the demo OTP, and submit feedback.
 6. Confirm a second submission updates or rejects the duplicate instead of creating another rating.
-7. Open a deep link in a new tab to confirm the Vercel rewrite works.
+7. Open a deep link in a new tab to confirm the SPA rewrite works.
+8. Open `/api/proxy?__service=backend&__path=/api/v1/health/` on the Vercel domain and confirm that it returns JSON with HTTP 200.
 
 The mock provider demonstrates the control boundary only. It is not Nagarik App and must never be presented as official identity verification.

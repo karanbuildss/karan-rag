@@ -64,7 +64,7 @@ end note
 note right of Backend
   Latest verified:
   86 whole-repository Python tests
-  25 frontend tests
+  28 frontend tests
   Live frontend/API/identity health = HTTP 200
 end note
 

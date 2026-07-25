@@ -7,15 +7,7 @@
   },
   "rewrites": [
     {
-      "source": "/api/v1/:path*",
-      "destination": "/api/proxy?__service=backend&__path=/api/v1/:path*"
-    },
-    {
-      "source": "/identity/:path*",
-      "destination": "/api/proxy?__service=identity&__path=/:path*"
-    },
-    {
-      "source": "/:path((?!api/|identity/).*)",
+      "source": "/:path((?!api/).*)",
       "destination": "/index.html"
     }
   ]

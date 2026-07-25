@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildUpstreamUrl } from './proxy'
+import { buildUpstreamUrl } from '../../api/proxy'
 
 describe('Vercel service proxy', () => {
   it('builds an allowlisted backend URL while preserving filters', () => {

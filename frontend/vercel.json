@@ -10,7 +10,7 @@
       "destination": "https://budget-darpan-identity.onrender.com/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/:path((?!api/|identity/).*)",
       "destination": "/index.html"
     }
   ]

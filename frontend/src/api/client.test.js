@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import api, { resolveApiBaseUrls } from './client'
+import api, { rejectUnexpectedHtml, resolveApiBaseUrls } from './client'
 
 describe('API session security', () => {
   it('sends cookies and the CSRF header across local development ports', () => {
@@ -30,5 +30,12 @@ describe('API session security', () => {
       api: 'http://localhost:8000/api/v1',
       identity: 'http://localhost:8001/api/v1',
     })
+  })
+
+  it('rejects an HTML SPA fallback returned from an API route', () => {
+    expect(() => rejectUnexpectedHtml({
+      data: '<!doctype html>',
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    })).toThrow('instead of JSON')
   })
 })

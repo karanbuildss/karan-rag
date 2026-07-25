@@ -32,6 +32,19 @@ const mockIdentityApi = axios.create({
   timeout: 5000,
 })
 
+export function rejectUnexpectedHtml(response) {
+  const contentType = response.headers?.['content-type'] || ''
+  if (contentType.includes('text/html')) {
+    const error = new Error('The API route returned the web application instead of JSON.')
+    error.code = 'unexpected_html_response'
+    throw error
+  }
+  return response
+}
+
+api.interceptors.response.use(rejectUnexpectedHtml)
+mockIdentityApi.interceptors.response.use(rejectUnexpectedHtml)
+
 export async function getHealth() {
   const response = await api.get('/health/')
   return response.data

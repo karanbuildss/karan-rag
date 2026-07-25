@@ -14,6 +14,9 @@ export default function AccountPage() {
 
   useEffect(() => {
     getCurrentAccount().then((result) => {
+      if (!result?.data || typeof result.data.authenticated !== 'boolean') {
+        throw new Error('Invalid account response')
+      }
       setAccount(result.data)
       setState('ready')
     }).catch(() => setState('error'))
